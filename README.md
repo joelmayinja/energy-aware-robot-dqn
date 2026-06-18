@@ -48,7 +48,7 @@ energy-aware-robot-dqn/
 ## Setup
 
 ```bash
-git clone https://github.com/<your-username>/energy-aware-robot-dqn.git
+git clone https://github.com/<joelmayinja>/energy-aware-robot-dqn.git
 cd energy-aware-robot-dqn
 python -m venv venv
 source venv/bin/activate   # on Windows: venv\Scripts\activate
@@ -59,6 +59,4 @@ pip install -r requirements.txt
 
 Mayinja Joel — Reg No: S24B23/047 — BSc. Computer Science, Uganda Christian University
 
-## License
 
-MIT — see [LICENSE](LICENSE)
