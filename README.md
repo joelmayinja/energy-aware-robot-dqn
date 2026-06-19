@@ -10,7 +10,7 @@
 Industrial robots are typically "energy-blind";they run at constant speed regardless of
 how much power is actually available or how much it costs. This project builds:
 
-1. **A DQN "Teacher"** that learns to control a simulated 6-DoF robot arm in a way that
+1. **A DQN "Teacher"** that learns to control a simulated 6-DoF (Deggress of Freedom) robot arm in a way that
    minimizes energy use (watt-seconds per task) instead of just minimizing time or distance.
 2. **A distilled "Student" model**  a much smaller network (<500K parameters) trained to
    mimic the Teacher's decisions, small enough to run in real time on a Raspberry Pi 4.
