@@ -1,4 +1,4 @@
-
+#importing of libraries
 
 import sys
 import os
@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.environment import RobotArmEnv
 
-
+#testing the environment by running a few random episodes
 def run_random_episode(env, episode_number):
     observation, info = env.reset()
     total_reward = 0.0
@@ -30,7 +30,7 @@ def run_random_episode(env, episode_number):
         f"final_distance={info['distance']:.3f}, task_done={info['task_done']}"
     )
 
-
+#launching the environment and running random episodes
 if __name__ == "__main__":
     env = RobotArmEnv(render_mode=None)
     print(f"Observation space: {env.observation_space.shape}")
