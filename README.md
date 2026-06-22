@@ -3,7 +3,7 @@
 > Optimizing Energy Costs of Industrial Machines (Robots) through Lightweight Deep Learning
 > Second Year BSc. Computer Science Research Project at Uganda Christian University
 
-**Status:** 🚧 In progress (Phase 1: Teacher model development)
+**Status:**  In progress (Phase 1: Teacher model development)
 
 ## Overview
 
