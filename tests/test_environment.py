@@ -7,6 +7,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.environment import RobotArmEnv
+cgr4
 
 #testing the environment by running a few random episodes
 def run_random_episode(env, episode_number):
