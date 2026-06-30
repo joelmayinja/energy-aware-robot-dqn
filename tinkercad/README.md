@@ -13,5 +13,5 @@ PyTorch or the actual trained DQN/Student model. This folder is for a simplified
 
 Once built in Tinkercad, paste the public share link here:
 
-- Tinkercad project link: _(add once created)_
+- Tinkercad project link: _(https://www.tinkercad.com/things/1190rCJ2dVj/editel?returnTo=%2Fdashboard%2Fdesigns%2Fcircuits)_
 - Arduino sketch: `demo_sketch.ino` _(to be added)_
