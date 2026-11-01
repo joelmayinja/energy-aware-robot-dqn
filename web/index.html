@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f172a">
+  <title>KUKA Energy-Aware DQN | Research Dashboard</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font: 15px/1.5 "Segoe UI", system-ui, sans-serif;
+      background: #0c1525;
+      color: #e2e8f0;
+      font-synthesis: none;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; }
+    header {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 1rem; padding: 1rem max(1.25rem, calc((100% - 1180px) / 2));
+      background: #101c30; border-bottom: 1px solid #29384f;
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: .2rem; font-size: 1.15rem; }
+    h2 { margin-bottom: .4rem; font-size: 1.2rem; }
+    h3 { margin-bottom: .6rem; font-size: 1rem; }
+    .subtitle, .muted, .unit { color: #94a3b8; }
+    .subtitle { margin: 0; font-size: .82rem; }
+    main { max-width: 1180px; margin: auto; padding: 1.4rem 1.25rem 3rem; }
+    .hero, .panel, .metric, .phase {
+      border: 1px solid #29384f; border-radius: 12px; background: #142137;
+    }
+    .hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; padding: 1.2rem 1.4rem; }
+    .hero p { max-width: 76ch; margin: .55rem 0 0; color: #bdc9d8; }
+    .tag { align-self: start; padding: .35rem .7rem; border: 1px solid #176a67; border-radius: 999px; color: #5eead4; background: #103436; font-size: .76rem; white-space: nowrap; }
+    .status { display: inline-flex; gap: .45rem; align-items: center; color: #bdc9d8; font-size: .82rem; }
+    .dot { width: .62rem; height: .62rem; border-radius: 50%; background: #94a3b8; }
+    .dot.running { background: #34d399; box-shadow: 0 0 10px #34d399; }
+    .dot.error { background: #fb7185; }
+    .pipeline { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; margin: .8rem 0; }
+    .phase { padding: .8rem 1rem; }
+    .phase strong { display: block; margin-bottom: .15rem; font-size: .87rem; }
+    .phase span { color: #94a3b8; font-size: .75rem; }
+    .phase.active { border-color: #14b8a6; box-shadow: inset 0 0 0 1px #14b8a633; }
+    .phase.done { border-color: #166534; }
+    .controls { display: flex; flex-wrap: wrap; align-items: end; gap: .7rem; padding: .85rem 0; }
+    label { display: grid; gap: .3rem; color: #bdc9d8; font-size: .8rem; }
+    input, button { min-height: 39px; border-radius: 7px; font: inherit; }
+    input[type="number"] { width: 110px; padding: .4rem .65rem; border: 1px solid #46566e; background: #0d1728; color: #f8fafc; }
+    input[type="range"] { width: 105px; accent-color: #2dd4bf; }
+    button { padding: .5rem .85rem; border: 1px solid transparent; cursor: pointer; font-size: .83rem; font-weight: 650; }
+    button:disabled { opacity: .48; cursor: not-allowed; }
+    .primary { color: #042f2e; background: #5eead4; }
+    .secondary { color: #e2e8f0; background: #25354e; border-color: #46566e; }
+    .danger { color: #ffe4e6; background: #4c2632; border-color: #854354; }
+    .status { margin-left: auto; }
+    .error { margin: 0 0 .8rem; color: #fda4af; }
+    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: .7rem; }
+    .metric { padding: .85rem .95rem; }
+    .label { color: #94a3b8; font-size: .76rem; }
+    .value { margin-top: .2rem; color: #f8fafc; font-size: 1.35rem; font-weight: 750; font-variant-numeric: tabular-nums; }
+    .unit { margin-top: .18rem; font-size: .72rem; }
+    .track { height: 7px; margin-top: .55rem; overflow: hidden; border-radius: 8px; background: #29384f; }
+    .fill { width: 0; height: 100%; background: #2dd4bf; transition: width .2s ease; }
+    .row { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(290px, .9fr); gap: .8rem; margin-top: .8rem; }
+    .panel { min-width: 0; padding: 1rem; }
+    .panel-title { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .5rem; }
+    canvas { display: block; width: 100%; height: 225px; }
+    #robot-canvas { height: 250px; }
+    .gauge { height: 12px; margin: .6rem 0 .3rem; overflow: hidden; border-radius: 8px; background: #29384f; }
+    .gauge-fill { width: 0; height: 100%; background: linear-gradient(90deg, #f59e0b, #34d399); transition: width .2s ease; }
+    .alert { padding: .65rem .8rem; border-left: 3px solid #2dd4bf; border-radius: 4px; background: #102b34; color: #cbd5e1; font-size: .84rem; }
+    .alert.warning { border-color: #fbbf24; background: #332b17; }
+    .alert.error { border-color: #fb7185; background: #381d2a; }
+    .history { max-height: 210px; overflow: auto; padding-left: 1.2rem; color: #bdc9d8; font-size: .8rem; }
+    .table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    .table td { padding: .36rem .2rem; border-bottom: 1px solid #29384f; }
+    .table td:last-child { color: #5eead4; text-align: right; font-variant-numeric: tabular-nums; }
+    .note { margin: .9rem 0 0; color: #94a3b8; font-size: .76rem; line-height: 1.55; }
+    @media (max-width: 720px) {
+      header { padding: 1rem; }
+      main { padding: 1rem .75rem 2rem; }
+      .hero { grid-template-columns: 1fr; }
+      .pipeline { grid-template-columns: 1fr; }
+      .row { grid-template-columns: 1fr; }
+      .status { width: 100%; margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Energy-Aware KUKA Robot Control</h1>
+      <p class="subtitle">Joel Mayinja · Uganda Christian University · Lightweight DQN research prototype</p>
+    </div>
+    <div class="status" role="status" aria-live="polite">
+      <span class="dot" id="status-dot"></span>
+      <span id="status-text">Connecting to local Flask server…</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <h2>Teacher DQN training & energy monitoring</h2>
+        <p>
+          Train a DQN policy for the six controlled joints of a simulated KUKA iiwa. The dashboard
+          compares its grid-energy draw with a maximum-speed inverse-kinematics baseline on the same seeded task, while
+          tracking the 50 Ws supercapacitor model across light and heavy task phases.
+        </p>
+      </div>
+      <span class="tag">PyBullet simulation · Not physical hardware</span>
+    </section>
+
+    <section class="pipeline" aria-label="Research project stages">
+      <article class="phase active" id="phase-teacher">
+        <strong>Phase 1 · Teacher DQN</strong><span>Current work · PyTorch, 23 observations, 25 actions</span>
+      </article>
+      <article class="phase" id="phase-student">
+        <strong>Phase 2 · Knowledge distillation</strong><span>Planned · Student network, 200 epochs</span>
+      </article>
+      <article class="phase" id="phase-edge">
+        <strong>Phase 3 · Edge deployment</strong><span>Planned · ONNX Runtime on Raspberry Pi 4</span>
+      </article>
+    </section>
+
+    <section class="controls" aria-label="Teacher training controls">
+      <label for="episode-count">Training episodes (1–500)
+        <input id="episode-count" type="number" min="1" max="500" value="3">
+      </label>
+      <button id="start-button" class="primary" type="button">Start teacher training</button>
+      <button id="pause-button" class="secondary" type="button" disabled>Pause</button>
+      <button id="stop-button" class="danger" type="button" disabled>Stop after this step</button>
+      <label for="speed-control">Dashboard playback speed
+        <input id="speed-control" type="range" min="1" max="5" value="3">
+      </label>
+      <button id="reset-button" class="secondary" type="button">Clear results</button>
+      <button id="export-button" class="secondary" type="button">Export episode CSV</button>
+    </section>
+    <p class="note">Start with 1–3 episodes to check the workflow. Your research plan is 500 episodes. Playback speed only changes how quickly updates are shown; it does not change the PyBullet physics.</p>
+    <p id="error-message" class="error" role="alert" hidden></p>
+
+    <section class="metrics" aria-label="Live teacher and energy metrics">
+      <article class="metric">
+        <div class="label">Episode / progress</div><div class="value" id="episode-value">0 / 0</div>
+        <div class="track"><div class="fill" id="episode-progress"></div></div>
+        <div class="unit" id="step-value">0 / 400 simulation steps</div>
+      </article>
+      <article class="metric">
+        <div class="label">Episode reward</div><div class="value" id="reward-value">—</div>
+        <div class="unit">Higher is better; target completion adds 50.</div>
+      </article>
+      <article class="metric">
+        <div class="label">Grid draw · latest step</div><div class="value" id="grid-value">—</div>
+        <div class="unit">Ws per step · peak threshold 3.0 Ws</div>
+      </article>
+      <article class="metric">
+        <div class="label">Peak grid reduction</div><div class="value" id="peak-value">—</div>
+        <div class="unit">Compared with fixed-speed baseline peak.</div>
+      </article>
+      <article class="metric">
+        <div class="label">Task completion rate</div><div class="value" id="completion-value">—</div>
+        <div class="unit">Research target: at least 80%.</div>
+      </article>
+      <article class="metric">
+        <div class="label">Buffer charge</div><div class="value" id="buffer-value">—</div>
+        <div class="gauge"><div class="gauge-fill" id="buffer-progress"></div></div>
+        <div class="unit">50 Ws capacity · 80% charge efficiency</div>
+      </article>
+      <article class="metric">
+        <div class="label">Target distance</div><div class="value" id="distance-value">—</div>
+        <div class="unit">Metres to the current light/heavy target.</div>
+      </article>
+      <article class="metric">
+        <div class="label">Exploration ε / learning loss</div><div class="value" id="epsilon-value">—</div>
+        <div class="unit" id="loss-value">Loss is unavailable until 64 experiences are collected.</div>
+      </article>
+    </section>
+
+    <section class="row">
+      <article class="panel">
+        <div class="panel-title"><h3>Grid draw per simulation step</h3><span class="unit">Maximum-speed baseline vs Teacher DQN · threshold 3.0 Ws</span></div>
+        <canvas id="grid-chart" aria-label="Live grid draw comparison against a constant-speed baseline"></canvas>
+      </article>
+      <article class="panel">
+        <div class="panel-title"><h3>KUKA iiwa arm pose</h3><span class="unit">2D schematic driven by PyBullet joint angles</span></div>
+        <canvas id="robot-canvas" aria-label="Schematic KUKA arm pose using simulated joint angles"></canvas>
+        <div class="unit" id="phase-value">Waiting for simulation…</div>
+      </article>
+    </section>
+
+    <section class="row">
+      <article class="panel">
+        <div class="panel-title"><h3>Energy per episode</h3><span class="unit">Actual environment totals · lower grid energy is better</span></div>
+        <canvas id="episode-chart" aria-label="Episode grid energy compared with the fixed-speed baseline"></canvas>
+      </article>
+      <article class="panel">
+        <h3>Simulation alerts</h3>
+        <p id="alert-box" class="alert" aria-live="polite">Ready. Start a short training run to collect simulation metrics.</p>
+        <h3 style="margin-top: 1rem">Completed episode results</h3>
+        <ol class="history" id="episode-log"><li>No episodes completed yet.</li></ol>
+      </article>
+    </section>
+
+    <section class="row">
+      <article class="panel">
+        <h3>Teacher DQN · project configuration</h3>
+        <table class="table">
+          <tbody>
+            <tr><td>Observation and actions</td><td>23 · 25 discrete</td></tr>
+            <tr><td>Q-network</td><td>256 → 256 → 25</td></tr>
+            <tr><td>Replay / batch</td><td>10,000 / 64</td></tr>
+            <tr><td>Learning rate / γ</td><td>0.001 / 0.99</td></tr>
+            <tr><td>Exploration</td><td>ε: 1.0 × 0.995 / episode · min 0.01</td></tr>
+            <tr><td>Target network</td><td>Every 10 episodes</td></tr>
+            <tr><td>Episode phases</td><td>Light 0–160 · Heavy 161–400</td></tr>
+          </tbody>
+        </table>
+      </article>
+      <article class="panel">
+        <h3>How to read this experiment</h3>
+        <p class="note">Reward combines grid-energy penalty, peak-spike penalty, buffer charging/deployment, target distance and the task-completion bonus. ε is the chance of a random exploratory action. Loss is the DQN's Q-value prediction error; it is not an energy metric.</p>
+        <p class="note">The baseline follows each target with inverse kinematics and maximum joint speed in the same seeded simulation. The 25 DQN actions are discrete velocity commands (one controlled joint at a time), not torque commands; the environment uses PyBullet velocity control. The 2D arm is a schematic of the real simulated joint angles, not a PyBullet camera render.</p>
+        <p class="note">The DAEWOO steel dataset, student distillation, grid-fault scenarios and Raspberry Pi/ONNX execution are later project stages. This dashboard does not claim those are implemented or that a Raspberry Pi is connected.</p>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let currentHistory = [];
+    let lastSeriesLength = -1;
+    let lastRunId = -1;
+    let polling = false;
+
+    function fmt(value, digits = 2) {
+      return typeof value === "number" && Number.isFinite(value) ? value.toFixed(digits) : "—";
+    }
+
+    function chartAxes(ctx, width, height, min, max, unit) {
+      const box = { left: 44, right: 12, top: 24, bottom: 28 };
+      ctx.strokeStyle = "#46566e";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(box.left, box.top);
+      ctx.lineTo(box.left, height - box.bottom);
+      ctx.lineTo(width - box.right, height - box.bottom);
+      ctx.stroke();
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "11px Segoe UI, sans-serif";
+      ctx.fillText(`${max.toFixed(1)} ${unit}`, 2, box.top + 4);
+      ctx.fillText(`${min.toFixed(1)} ${unit}`, 2, height - box.bottom);
+      return box;
+    }
+
+    function prepareCanvas(id) {
+      const canvas = $(id);
+      const width = Math.max(280, canvas.clientWidth);
+      const height = 225;
+      const ratio = window.devicePixelRatio || 1;
+      canvas.width = width * ratio;
+      canvas.height = height * ratio;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(ratio, ratio);
+      ctx.clearRect(0, 0, width, height);
+      return { canvas, ctx, width, height };
+    }
+
+    function drawGridChart(series) {
+      const { ctx, width, height } = prepareCanvas("grid-chart");
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "11px Segoe UI, sans-serif";
+      ctx.fillText("Actual simulated grid draw (Ws / step)", 45, 14);
+      if (!series.length) {
+        ctx.fillText("Waiting for the seeded baseline and DQN episode…", 45, 48);
+        return;
+      }
+      const values = series.flatMap((point) => [point.agent, point.baseline]).filter(Number.isFinite);
+      const max = Math.max(3, ...values) * 1.08;
+      const box = chartAxes(ctx, width, height, 0, max, "Ws");
+      const thresholdY = box.top + (max - 3) / max * (height - box.top - box.bottom);
+      ctx.setLineDash([5, 4]);
+      ctx.strokeStyle = "#fb7185";
+      ctx.beginPath();
+      ctx.moveTo(box.left, thresholdY);
+      ctx.lineTo(width - box.right, thresholdY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      for (const [key, color] of [["baseline", "#fbbf24"], ["agent", "#2dd4bf"]]) {
+        const points = series.map((item, index) => ({ index, value: item[key] })).filter((item) => Number.isFinite(item.value));
+        if (!points.length) continue;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        points.forEach((point, index) => {
+          const x = box.left + point.index / Math.max(1, series.length - 1) * (width - box.left - box.right);
+          const y = box.top + (max - point.value) / max * (height - box.top - box.bottom);
+          if (index === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+      }
+      ctx.fillStyle = "#fbbf24"; ctx.fillText("Baseline", box.left + 5, height - 7);
+      ctx.fillStyle = "#2dd4bf"; ctx.fillText("Teacher DQN", box.left + 78, height - 7);
+      ctx.fillStyle = "#fb7185"; ctx.fillText("Peak limit", box.left + 175, height - 7);
+    }
+
+    function drawEpisodeChart(history) {
+      const { ctx, width, height } = prepareCanvas("episode-chart");
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "11px Segoe UI, sans-serif";
+      ctx.fillText("Total grid energy per episode (Ws)", 45, 14);
+      if (!history.length) {
+        ctx.fillText("Complete an episode to compare real environment totals.", 45, 48);
+        return;
+      }
+      const values = history.flatMap((item) => [item.grid_energy, item.baseline_grid_energy]).filter(Number.isFinite);
+      const max = Math.max(1, ...values) * 1.08;
+      const box = chartAxes(ctx, width, height, 0, max, "Ws");
+      const groupWidth = (width - box.left - box.right) / history.length;
+      const barWidth = Math.max(3, Math.min(20, groupWidth * .32));
+      history.forEach((item, index) => {
+        const x = box.left + index * groupWidth + groupWidth / 2;
+        for (const [value, color, offset] of [
+          [item.baseline_grid_energy, "#fbbf24", -barWidth * .55],
+          [item.grid_energy, "#2dd4bf", barWidth * .55]
+        ]) {
+          const barHeight = value / max * (height - box.top - box.bottom);
+          ctx.fillStyle = color;
+          ctx.fillRect(x + offset - barWidth / 2, height - box.bottom - barHeight, barWidth, barHeight);
+        }
+      });
+      ctx.fillStyle = "#fbbf24"; ctx.fillText("Baseline", box.left + 5, height - 7);
+      ctx.fillStyle = "#2dd4bf"; ctx.fillText("Teacher DQN", box.left + 78, height - 7);
+    }
+
+    function drawRobot(joints = []) {
+      const { ctx, width, height } = prepareCanvas("robot-canvas");
+      const originX = width * .5;
+      const originY = height - 28;
+      const lengths = [34, 32, 30, 28, 25, 22];
+      let x = originX;
+      let y = originY;
+      let angle = -Math.PI / 2;
+      ctx.fillStyle = "#64748b";
+      ctx.fillRect(originX - 36, originY, 72, 12);
+      ctx.lineWidth = 9;
+      ctx.lineCap = "round";
+      for (let index = 0; index < lengths.length; index += 1) {
+        angle += (Number(joints[index]) || 0) * (index % 2 === 0 ? 1 : .65);
+        const nextX = x + Math.cos(angle) * lengths[index];
+        const nextY = y + Math.sin(angle) * lengths[index];
+        ctx.strokeStyle = index < 3 ? "#0d9488" : "#2dd4bf";
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(nextX, nextY); ctx.stroke();
+        ctx.fillStyle = "#e2e8f0";
+        ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill();
+        x = nextX; y = nextY;
+      }
+      ctx.fillStyle = "#fbbf24";
+      ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "11px Segoe UI, sans-serif";
+      ctx.fillText("Joints 0–5 · angle-based 2D schematic · wrist joint 6 locked", 8, 15);
+    }
+
+    function render(state) {
+      const messages = {
+        idle: "Ready · local PyBullet simulation",
+        running: state.stage === "baseline" ? "Measuring fixed-speed baseline" : "Teacher DQN training",
+        paused: "Training paused",
+        completed: "Teacher training completed",
+        stopped: "Training stopped",
+        error: "Training failed"
+      };
+      $("status-text").textContent = messages[state.status] || "Local simulation";
+      $("status-dot").className = `dot${state.status === "running" ? " running" : state.status === "error" ? " error" : ""}`;
+      $("start-button").disabled = ["running", "paused"].includes(state.status);
+      $("pause-button").disabled = !["running", "paused"].includes(state.status);
+      $("pause-button").textContent = state.status === "paused" ? "Resume" : "Pause";
+      $("stop-button").disabled = !["running", "paused"].includes(state.status);
+      $("error-message").hidden = !state.error;
+      $("error-message").textContent = state.error ? `Training error: ${state.error}` : "";
+      $("episode-value").textContent = `${state.episode || 0} / ${state.episodes_requested || 0}`;
+      $("step-value").textContent = `${state.episode_step || 0} / ${state.max_steps || 400} simulation steps`;
+      $("episode-progress").style.width = `${Math.min(100, 100 * (state.episode_step || 0) / (state.max_steps || 400))}%`;
+      $("reward-value").textContent = fmt(state.reward);
+      $("grid-value").textContent = `${fmt(state.agent_grid_draw)} / ${fmt(state.baseline_grid_draw)} Ws`;
+      $("buffer-value").textContent = `${fmt(state.buffer_level)} / 50 Ws`;
+      $("buffer-progress").style.width = `${Math.max(0, Math.min(100, (state.buffer_level || 0) / 50 * 100))}%`;
+      $("distance-value").textContent = `${fmt(state.distance)} m`;
+      $("epsilon-value").textContent = fmt(state.epsilon, 3);
+      $("loss-value").textContent = state.loss == null ? "Loss appears after 64 stored experiences." : `Latest batch loss: ${fmt(state.loss, 5)}`;
+      $("speed-control").value = state.speed || 3;
+      $("phase-value").textContent = state.episode_step ? (state.phase === 0 ? "Phase 0 · light task · charging buffer" : "Phase 1 · heavy task · deploying buffer") : "Waiting for simulation…";
+
+      const last = currentHistory[currentHistory.length - 1];
+      $("peak-value").textContent = last ? `${fmt(last.peak_reduction_percent)}%` : "—";
+      const completions = currentHistory.filter((item) => item.task_done).length;
+      $("completion-value").textContent = currentHistory.length ? `${fmt(completions / currentHistory.length * 100, 1)}%` : "—";
+      drawRobot(state.joint_positions);
+      if (state.series.length !== lastSeriesLength || state.status === "running") {
+        drawGridChart(state.series);
+        lastSeriesLength = state.series.length;
+      }
+      if (state.run_id !== lastRunId || currentHistory.length !== (state.history || []).length) {
+        lastRunId = state.run_id;
+        currentHistory = state.history || [];
+        drawEpisodeChart(currentHistory);
+        const log = $("episode-log");
+        log.replaceChildren();
+        if (!currentHistory.length) {
+          const item = document.createElement("li"); item.textContent = "No episodes completed yet."; log.append(item);
+        } else {
+          currentHistory.slice().reverse().forEach((item) => {
+            const row = document.createElement("li");
+            row.textContent = `Ep ${item.episode}: reward ${fmt(item.reward)}, grid ${fmt(item.grid_energy)} / baseline ${fmt(item.baseline_grid_energy)} Ws, peak reduction ${fmt(item.peak_reduction_percent)}%, ${item.task_done ? "target reached" : "target not reached"}`;
+            log.append(row);
+          });
+        }
+      }
+
+      const alert = $("alert-box");
+      alert.className = "alert";
+      if (state.error) {
+        alert.classList.add("error");
+        alert.textContent = state.error;
+      } else if (state.agent_grid_draw > 3) {
+        alert.classList.add("warning");
+        alert.textContent = `Teacher grid draw ${fmt(state.agent_grid_draw)} Ws exceeded the 3.0 Ws peak threshold at this step.`;
+      } else if (state.status === "running" && state.stage === "baseline") {
+        alert.textContent = "Measuring the constant-speed controller first using the episode's seeded KUKA task.";
+      } else if (state.status === "running") {
+        alert.textContent = `Teacher episode ${state.episode}: monitoring grid draw, target distance, buffer charge and reward.`;
+      } else if (last) {
+        alert.textContent = `${completions}/${currentHistory.length} tasks completed. Results are simulation measurements, not physical robot tests.`;
+      } else {
+        alert.textContent = "Ready. Start a short training run to collect KUKA simulation metrics.";
+      }
+    }
+
+    async function api(path, body) {
+      const response = await fetch(path, {
+        method: body === undefined ? "GET" : "POST",
+        headers: body === undefined ? {} : { "Content-Type": "application/json" },
+        body: body === undefined ? undefined : JSON.stringify(body)
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `Server returned ${response.status}`);
+      return data;
+    }
+
+    async function poll() {
+      if (polling) return;
+      polling = true;
+      try {
+        render(await api("/api/status"));
+      } catch (error) {
+        $("status-text").textContent = "Cannot connect · start the Flask server";
+        $("status-dot").className = "dot error";
+        $("error-message").hidden = false;
+        $("error-message").textContent = error.message;
+      } finally {
+        polling = false;
+      }
+    }
+
+    async function postAndRefresh(path, body) {
+      try {
+        await api(path, body);
+        await poll();
+      } catch (error) {
+        $("error-message").hidden = false;
+        $("error-message").textContent = error.message;
+      }
+    }
+
+    $("start-button").addEventListener("click", () => postAndRefresh("/api/train", { episodes: Number($("episode-count").value) }));
+    $("pause-button").addEventListener("click", () => postAndRefresh($("pause-button").textContent === "Resume" ? "/api/resume" : "/api/pause", {}));
+    $("stop-button").addEventListener("click", () => postAndRefresh("/api/stop", {}));
+    $("reset-button").addEventListener("click", async () => {
+      try { render(await api("/api/reset", {})); }
+      catch (error) { $("error-message").hidden = false; $("error-message").textContent = error.message; }
+    });
+    $("speed-control").addEventListener("input", () => postAndRefresh("/api/speed", { speed: Number($("speed-control").value) }));
+    $("export-button").addEventListener("click", () => {
+      if (!currentHistory.length) {
+        $("error-message").hidden = false;
+        $("error-message").textContent = "Complete an episode before exporting training results.";
+        return;
+      }
+      const columns = ["episode", "steps", "reward", "grid_energy_ws", "baseline_grid_energy_ws", "peak_grid_draw", "baseline_peak_grid_draw", "peak_reduction_percent", "task_done", "distance_m", "buffer_used_ws", "epsilon", "mean_loss"];
+      const sourceKeys = ["episode", "steps", "reward", "grid_energy", "baseline_grid_energy", "peak_grid_draw", "baseline_peak_grid_draw", "peak_reduction_percent", "task_done", "distance", "buffer_used", "epsilon", "mean_loss"];
+      const rows = currentHistory.map((episode) => sourceKeys.map((key) => `"${String(episode[key] ?? "").replaceAll('"', '""')}"`).join(","));
+      const blob = new Blob([[columns.join(","), ...rows].join("\r\n")], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url; link.download = "training_history.csv"; link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+    window.addEventListener("resize", () => { drawRobot(); drawGridChart([]); drawEpisodeChart(currentHistory); });
+    drawRobot();
+    drawGridChart([]);
+    drawEpisodeChart([]);
+    poll();
+    window.setInterval(poll, 800);
+  </script>
+</body>
+</html>
