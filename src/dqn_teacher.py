@@ -63,7 +63,7 @@ def build_discrete_action_table(num_joints):
 class QNetwork(nn.Module):
     """Small feedforward network: state -> one Q-value per discrete action."""
 
-    def __init__(self, state_dim, num_actions, hidden_size=128):
+    def __init__(self, state_dim, num_actions, hidden_size=256):
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(state_dim, hidden_size),
@@ -80,7 +80,7 @@ class QNetwork(nn.Module):
 class ReplayBuffer:
     """Fixed-size memory of past experiences, sampled randomly for training."""
 
-    def __init__(self, capacity=50_000):
+    def __init__(self, capacity=10_000):
         self.buffer = deque(maxlen=capacity)
 
     def push(self, state, action, reward, next_state, done):
@@ -108,7 +108,7 @@ class DQNAgent:
     """
 
     def __init__(self, state_dim, num_joints, lr=1e-3, gamma=0.99,
-                 buffer_capacity=50_000, device=None):
+                 buffer_capacity=10_000, device=None):
         self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.action_table = build_discrete_action_table(num_joints)
         self.num_actions = len(self.action_table)

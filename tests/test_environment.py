@@ -1,46 +1,64 @@
-#importing of libraries
+import unittest
+import importlib.util
 
-import sys
-import os
+import numpy as np
 
-# Allow running this script directly without installing the package
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+if importlib.util.find_spec("pybullet") is None:
+    raise unittest.SkipTest("Install PyBullet to run KUKA environment tests.")
 
 from src.environment import RobotArmEnv
-cgr4
 
-#testing the environment by running a few random episodes
-def run_random_episode(env, episode_number):
-    observation, info = env.reset()
-    total_reward = 0.0
-    total_energy = 0.0
-    step = 0
-    terminated = False
-    truncated = False
 
-    while not (terminated or truncated):
-        action = env.action_space.sample()  # completely random action
-        observation, reward, terminated, truncated, info = env.step(action)
-        total_reward += reward
-        total_energy += info["energy_used"]
-        step += 1
+class RobotArmEnvironmentTests(unittest.TestCase):
+    def setUp(self):
+        self.env = RobotArmEnv(render_mode=None)
+        self.addCleanup(self.env.close)
 
-    print(
-        f"Episode {episode_number}: steps={step}, "
-        f"total_reward={total_reward:.2f}, total_energy={total_energy:.4f}, "
-        f"final_distance={info['distance']:.3f}, task_done={info['task_done']}"
-    )
+    def test_reset_returns_expected_observation(self):
+        observation, info = self.env.reset(seed=7)
 
-#launching the environment and running random episodes
+        self.assertEqual(observation.shape, (23,))
+        self.assertEqual(observation.dtype, np.float32)
+        self.assertEqual(info, {})
+        self.assertGreaterEqual(self.env.energy_buffer, 5.0)
+        self.assertLessEqual(self.env.energy_buffer, 15.0)
+
+    def test_step_returns_energy_metrics_and_valid_episode_flags(self):
+        self.env.reset(seed=7)
+        observation, reward, terminated, truncated, info = self.env.step(
+            np.zeros(6, dtype=np.float32)
+        )
+
+        self.assertEqual(observation.shape, (23,))
+        self.assertTrue(np.isfinite(reward))
+        self.assertIsInstance(terminated, bool)
+        self.assertIsInstance(truncated, bool)
+        for key in (
+            "grid_draw",
+            "total_grid_draw",
+            "buffer_level",
+            "distance",
+            "task_done",
+            "peak_penalty",
+            "peak_grid_draw",
+        ):
+            self.assertIn(key, info)
+        self.assertGreaterEqual(info["buffer_level"], 0.0)
+        self.assertLessEqual(info["buffer_level"], self.env.BUFFER_CAPACITY)
+        self.assertAlmostEqual(info["peak_grid_draw"], info["grid_draw"])
+
+    def test_constant_speed_baseline_does_not_use_energy_buffer(self):
+        baseline = RobotArmEnv(render_mode=None, buffer_enabled=False)
+        self.addCleanup(baseline.close)
+
+        baseline.reset(seed=7)
+        self.assertEqual(baseline.energy_buffer, 0.0)
+        _, _, _, _, info = baseline.step(np.ones(6, dtype=np.float32))
+
+        self.assertEqual(info["buffer_level"], 0.0)
+        self.assertEqual(info["buffer_deployed"], 0.0)
+        self.assertEqual(info["grid_draw"], info["energy_raw"])
+
+
 if __name__ == "__main__":
-    env = RobotArmEnv(render_mode=None)
-    print(f"Observation space: {env.observation_space.shape}")
-    print(f"Action space: {env.action_space.shape}")
-    print("-" * 60)
-
-    for ep in range(3):
-        run_random_episode(env, ep + 1)
-
-    env.close()
-    print("-" * 60)
-    print("Environment ran successfully with no crashes.")
+    unittest.main()

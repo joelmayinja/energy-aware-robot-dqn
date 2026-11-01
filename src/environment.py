@@ -18,7 +18,7 @@ spikes is worth money everywhere.
     - target position        (3 values: x, y, z in metres)
     - task_phase             (1 value: 0.0 = light task, 1.0 = heavy task)
     - energy_buffer_level    (1 value: 0.0 empty -> 1.0 full)
-    - buffer_used_this_step  (1 value: how much buffer was drawn last step)
+    - grid_draw_last         (1 value: last step's grid draw, normalised)
     - distance_to_target     (1 value: direct scalar, helps the agent plan)
     - step_fraction          (1 value: how far through the episode we are)
 
@@ -91,9 +91,10 @@ class RobotArmEnv(gym.Env):
     # The episode switches from light to heavy task at this step fraction.
     PHASE_SWITCH_FRACTION = 0.40   # switch to heavy task at 40% of episode length
 
-    def __init__(self, render_mode=None):
+    def __init__(self, render_mode=None, buffer_enabled=True):
         super().__init__()
         self.render_mode = render_mode
+        self.buffer_enabled = buffer_enabled
 
         self.physics_client = p.connect(
             p.GUI if render_mode == "human" else p.DIRECT
@@ -114,6 +115,8 @@ class RobotArmEnv(gym.Env):
         self.task_phase           = 0      # 0 = light, 1 = heavy
         self.step_count           = 0
         self.buffer_used_last     = 0.0
+        self.grid_draw_last       = 0.0
+        self.peak_grid_draw       = 0.0
         self.total_grid_draw      = 0.0    # tracked for reporting
         self.total_buffer_used    = 0.0    # tracked for reporting
 
@@ -129,7 +132,7 @@ class RobotArmEnv(gym.Env):
             + 3                 # target xyz
             + 1                 # task_phase
             + 1                 # energy_buffer_level (normalised 0-1)
-            + 1                 # buffer_used_this_step (normalised)
+            + 1                 # grid_draw_last (normalised)
             + 1                 # distance to target
             + 1                 # step fraction (how far through episode)
         )
@@ -186,8 +189,12 @@ class RobotArmEnv(gym.Env):
 
         self.target_position   = self.light_target.copy()
         self.task_phase        = 0
-        self.energy_buffer     = 0.0
+        self.energy_buffer     = (
+            float(self.np_random.uniform(5.0, 15.0)) if self.buffer_enabled else 0.0
+        )
         self.buffer_used_last  = 0.0
+        self.grid_draw_last    = 0.0
+        self.peak_grid_draw    = 0.0
         self.total_grid_draw   = 0.0
         self.total_buffer_used = 0.0
         self.step_count        = 0
@@ -240,7 +247,10 @@ class RobotArmEnv(gym.Env):
         buffer_deployed = 0.0
         grid_draw       = raw_energy   # default: everything comes from the grid
 
-        if self.task_phase == 0:
+        if not self.buffer_enabled:
+            grid_draw = raw_energy
+
+        elif self.task_phase == 0:
             # Light phase: save surplus energy into the buffer
             # "Surplus" = energy we used LESS THAN the gentle ceiling
             gentle_ceiling = 1.5   # watt-seconds — gentle movement threshold
@@ -261,8 +271,11 @@ class RobotArmEnv(gym.Env):
 
         # Peak spike: how much did grid_draw EXCEED the safe threshold?
         peak_spike = max(0.0, grid_draw - self.PEAK_THRESHOLD)
+        peak_penalty = float(grid_draw > self.PEAK_THRESHOLD)
 
         self.buffer_used_last   = buffer_deployed
+        self.grid_draw_last     = grid_draw
+        self.peak_grid_draw     = max(self.peak_grid_draw, grid_draw)
         self.total_grid_draw   += grid_draw
         self.total_buffer_used += buffer_deployed
 
@@ -275,7 +288,7 @@ class RobotArmEnv(gym.Env):
 
         reward = (
             - self.ALPHA    * grid_draw
-            - self.PEAK_PEN * peak_spike
+            - self.PEAK_PEN * peak_penalty
             + self.BUFFER_REW  * buffer_saved
             + self.BUFFER_USE  * buffer_deployed
             - self.BETA     * distance
@@ -289,9 +302,11 @@ class RobotArmEnv(gym.Env):
         info = {
             "energy_raw":       raw_energy,
             "grid_draw":        grid_draw,
+            "peak_spike":      peak_spike,
+            "peak_penalty":    peak_penalty,
+            "peak_grid_draw":  self.peak_grid_draw,
             "buffer_saved":     buffer_saved,
             "buffer_deployed":  buffer_deployed,
-            "peak_spike":       peak_spike,
             "buffer_level":     self.energy_buffer,
             "distance":         distance,
             "task_phase":       self.task_phase,
@@ -323,7 +338,7 @@ class RobotArmEnv(gym.Env):
             self.target_position.astype(np.float32),
             np.array([float(self.task_phase)],                          dtype=np.float32),
             np.array([self.energy_buffer / self.BUFFER_CAPACITY],       dtype=np.float32),
-            np.array([self.buffer_used_last / (self.BUFFER_CAPACITY + 1e-8)], dtype=np.float32),
+            np.array([self.grid_draw_last / (self.PEAK_THRESHOLD + 1e-8)], dtype=np.float32),
             np.array([distance],                                         dtype=np.float32),
             np.array([step_fraction],                                    dtype=np.float32),
         ])
