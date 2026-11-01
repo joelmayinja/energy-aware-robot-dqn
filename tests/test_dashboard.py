@@ -8,12 +8,15 @@ from src import dashboard
 class DashboardServerTests(unittest.TestCase):
     def setUp(self):
         dashboard.controller.reset()
+        self.pybullet_patch = patch("src.dashboard.pybullet_available", return_value=True)
+        self.pybullet_patch.start()
         self.client = dashboard.app.test_client()
 
     def tearDown(self):
         dashboard.controller.stop()
         if dashboard.controller.thread is not None:
             dashboard.controller.thread.join(timeout=2)
+        self.pybullet_patch.stop()
 
     def test_snapshot_is_a_detached_copy(self):
         dashboard.controller._update_step(
@@ -59,6 +62,15 @@ class DashboardServerTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertIn("1 and 500 episodes", response.json["error"])
+
+    def test_training_is_blocked_when_pybullet_is_unavailable(self):
+        with patch("src.dashboard.pybullet_available", return_value=False):
+            status = self.client.get("/api/status")
+            response = self.client.post("/api/train", json={"episodes": 1})
+
+        self.assertFalse(status.json["pybullet_available"])
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("PyBullet is unavailable", response.json["error"])
 
     def test_speed_endpoint_validates_range(self):
         response = self.client.post("/api/speed", json={"speed": 0})

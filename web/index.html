@@ -366,7 +366,7 @@
 
     function render(state) {
       const messages = {
-        idle: "Ready · local PyBullet simulation",
+        idle: state.pybullet_available ? "Ready · local PyBullet simulation" : "PyBullet unavailable · setup needed",
         running: state.stage === "baseline" ? "Measuring fixed-speed baseline" : "Teacher DQN training",
         paused: "Training paused",
         completed: "Teacher training completed",
@@ -374,8 +374,8 @@
         error: "Training failed"
       };
       $("status-text").textContent = messages[state.status] || "Local simulation";
-      $("status-dot").className = `dot${state.status === "running" ? " running" : state.status === "error" ? " error" : ""}`;
-      $("start-button").disabled = ["running", "paused"].includes(state.status);
+      $("status-dot").className = `dot${state.status === "running" ? " running" : state.status === "error" || !state.pybullet_available ? " error" : ""}`;
+      $("start-button").disabled = ["running", "paused"].includes(state.status) || !state.pybullet_available;
       $("pause-button").disabled = !["running", "paused"].includes(state.status);
       $("pause-button").textContent = state.status === "paused" ? "Resume" : "Pause";
       $("stop-button").disabled = !["running", "paused"].includes(state.status);
@@ -425,6 +425,9 @@
       if (state.error) {
         alert.classList.add("error");
         alert.textContent = state.error;
+      } else if (!state.pybullet_available) {
+        alert.classList.add("warning");
+        alert.textContent = "PyBullet is not installed in this Python environment. Follow Setup in README.md, then restart the dashboard.";
       } else if (state.agent_grid_draw > 3) {
         alert.classList.add("warning");
         alert.textContent = `Teacher grid draw ${fmt(state.agent_grid_draw)} Ws exceeded the 3.0 Ws peak threshold at this step.`;

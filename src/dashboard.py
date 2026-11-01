@@ -1,5 +1,6 @@
 """Flask dashboard for monitoring the KUKA energy-aware DQN project."""
 
+from importlib.util import find_spec
 from pathlib import Path
 from threading import Event, Lock, Thread
 
@@ -10,6 +11,10 @@ from src.training import train
 
 WEB_ROOT = Path(__file__).resolve().parent.parent / "web"
 MAX_EPISODES_PER_RUN = 500
+
+
+def pybullet_available():
+    return find_spec("pybullet") is not None
 
 
 class TrainingController:
@@ -169,7 +174,7 @@ def dashboard_page():
 
 @app.get("/api/status")
 def training_status():
-    return jsonify(controller.snapshot())
+    return jsonify(**controller.snapshot(), pybullet_available=pybullet_available())
 
 
 @app.post("/api/train")
@@ -182,6 +187,8 @@ def start_training():
         return jsonify(error="Episodes must be a whole number."), 400
     if not 1 <= episodes <= MAX_EPISODES_PER_RUN:
         return jsonify(error=f"Choose between 1 and {MAX_EPISODES_PER_RUN} episodes."), 400
+    if not pybullet_available():
+        return jsonify(error="PyBullet is unavailable. Follow Setup in README.md, then restart the dashboard."), 503
     if not controller.start(episodes):
         return jsonify(error="A training run is already active."), 409
     return jsonify(status="running", episodes_requested=episodes), 202
