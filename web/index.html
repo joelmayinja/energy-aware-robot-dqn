@@ -3,228 +3,421 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0f172a">
-  <title>KUKA Energy-Aware DQN | Research Dashboard</title>
+  <meta name="theme-color" content="#f3f6f5">
+  <title>Wattwise | Energy Intelligence</title>
   <style>
     :root {
-      color-scheme: dark;
-      font: 15px/1.5 "Segoe UI", system-ui, sans-serif;
-      background: #0c1525;
-      color: #e2e8f0;
+      color-scheme: light;
+      font: 14px/1.5 "Segoe UI", Inter, system-ui, sans-serif;
+      color: #172a2c;
+      background: #f3f6f5;
       font-synthesis: none;
+      --ink: #172a2c;
+      --muted: #748382;
+      --line: #e6ece9;
+      --paper: #fff;
+      --canvas: #f3f6f5;
+      --teal: #087f82;
+      --teal-dark: #075c61;
+      --teal-soft: #e3f3f0;
+      --orange: #ed8455;
+      --red: #d9594c;
+      --shadow: 0 8px 26px rgb(22 46 41 / 4%);
     }
     * { box-sizing: border-box; }
-    body { margin: 0; min-width: 320px; }
-    header {
-      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-      gap: 1rem; padding: 1rem max(1.25rem, calc((100% - 1180px) / 2));
-      background: #101c30; border-bottom: 1px solid #29384f;
+    body { margin: 0; min-width: 320px; min-height: 100vh; }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    .app-shell { display: grid; grid-template-columns: 238px minmax(0, 1fr); min-height: 100vh; }
+    .sidebar {
+      position: sticky; top: 0; display: flex; height: 100vh; flex-direction: column;
+      padding: 26px 17px 18px; border-right: 1px solid var(--line); background: #fff;
     }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 10px 29px; }
+    .brand-mark {
+      display: grid; width: 38px; height: 38px; place-items: center; border-radius: 12px;
+      background: #e4f4f1; color: var(--teal);
+    }
+    .brand-mark svg { width: 24px; height: 24px; }
+    .brand-name { font-size: 15px; font-weight: 800; letter-spacing: .11em; }
+    .brand-caption { color: var(--muted); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+    .nav-label { padding: 8px 11px; color: #9aa8a5; font-size: 10px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
+    .nav-list { display: grid; gap: 5px; }
+    .nav-link {
+      display: flex; min-height: 43px; align-items: center; gap: 12px; padding: 0 12px;
+      border: 0; border-radius: 9px; background: transparent; color: #697977; cursor: pointer;
+      text-align: left; transition: background .16s ease, color .16s ease;
+    }
+    .nav-link:hover { background: #f4f8f6; color: var(--ink); }
+    .nav-link.active { background: var(--teal-soft); color: var(--teal-dark); font-weight: 700; }
+    .nav-icon { display: inline-grid; width: 19px; place-items: center; color: currentColor; font-size: 17px; }
+    .sidebar-spacer { flex: 1; }
+    .project-card { padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #f9fbfa; }
+    .project-card-title { margin: 0 0 7px; font-size: 12px; font-weight: 750; }
+    .project-card p { margin: 0; color: var(--muted); font-size: 11px; }
+    .sidebar-footer { padding: 15px 8px 0; color: #94a19f; font-size: 10px; }
+    .workspace { min-width: 0; padding: 0 36px 38px; }
+    .topbar {
+      display: flex; min-height: 77px; align-items: center; justify-content: space-between;
+      gap: 16px; border-bottom: 1px solid var(--line);
+    }
+    .breadcrumbs { color: var(--muted); font-size: 12px; }
+    .breadcrumbs strong { color: var(--ink); font-weight: 700; }
+    .topbar-right { display: flex; align-items: center; gap: 18px; }
+    .date-label { color: var(--muted); font-size: 12px; }
+    .server-status { display: inline-flex; align-items: center; gap: 8px; color: #50615e; font-size: 12px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #a6b0ae; }
+    .dot.running { background: #24a47c; box-shadow: 0 0 0 3px #24a47c20; }
+    .dot.error { background: var(--red); }
+    .page-view { display: none; padding-top: 27px; animation: appear .18s ease-out; }
+    .page-view.active { display: block; }
+    @keyframes appear { from { opacity: .55; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+    .page-heading { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 14px; margin-bottom: 20px; }
+    .eyebrow { margin: 0 0 4px; color: var(--teal); font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
     h1, h2, h3, p { margin-top: 0; }
-    h1 { margin-bottom: .2rem; font-size: 1.15rem; }
-    h2 { margin-bottom: .4rem; font-size: 1.2rem; }
-    h3 { margin-bottom: .6rem; font-size: 1rem; }
-    .subtitle, .muted, .unit { color: #94a3b8; }
-    .subtitle { margin: 0; font-size: .82rem; }
-    main { max-width: 1180px; margin: auto; padding: 1.4rem 1.25rem 3rem; }
-    .hero, .panel, .metric, .phase {
-      border: 1px solid #29384f; border-radius: 12px; background: #142137;
+    h1 { margin-bottom: 4px; font-size: clamp(22px, 2.4vw, 29px); letter-spacing: -.04em; line-height: 1.2; }
+    h2 { margin-bottom: 5px; font-size: 18px; letter-spacing: -.025em; }
+    h3 { margin-bottom: 0; font-size: 13px; font-weight: 750; }
+    .page-description { margin: 0; color: var(--muted); font-size: 12px; }
+    .button {
+      display: inline-flex; min-height: 38px; align-items: center; justify-content: center; gap: 7px;
+      padding: 0 13px; border: 1px solid #dfe8e4; border-radius: 8px; background: #fff;
+      color: #425451; cursor: pointer; font-size: 11px; font-weight: 700; transition: .15s ease;
     }
-    .hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; padding: 1.2rem 1.4rem; }
-    .hero p { max-width: 76ch; margin: .55rem 0 0; color: #bdc9d8; }
-    .tag { align-self: start; padding: .35rem .7rem; border: 1px solid #176a67; border-radius: 999px; color: #5eead4; background: #103436; font-size: .76rem; white-space: nowrap; }
-    .status { display: inline-flex; gap: .45rem; align-items: center; color: #bdc9d8; font-size: .82rem; }
-    .dot { width: .62rem; height: .62rem; border-radius: 50%; background: #94a3b8; }
-    .dot.running { background: #34d399; box-shadow: 0 0 10px #34d399; }
-    .dot.error { background: #fb7185; }
-    .pipeline { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; margin: .8rem 0; }
-    .phase { padding: .8rem 1rem; }
-    .phase strong { display: block; margin-bottom: .15rem; font-size: .87rem; }
-    .phase span { color: #94a3b8; font-size: .75rem; }
-    .phase.active { border-color: #14b8a6; box-shadow: inset 0 0 0 1px #14b8a633; }
-    .phase.done { border-color: #166534; }
-    .controls { display: flex; flex-wrap: wrap; align-items: end; gap: .7rem; padding: .85rem 0; }
-    label { display: grid; gap: .3rem; color: #bdc9d8; font-size: .8rem; }
-    input, button { min-height: 39px; border-radius: 7px; font: inherit; }
-    input[type="number"] { width: 110px; padding: .4rem .65rem; border: 1px solid #46566e; background: #0d1728; color: #f8fafc; }
-    input[type="range"] { width: 105px; accent-color: #2dd4bf; }
-    button { padding: .5rem .85rem; border: 1px solid transparent; cursor: pointer; font-size: .83rem; font-weight: 650; }
-    button:disabled { opacity: .48; cursor: not-allowed; }
-    .primary { color: #042f2e; background: #5eead4; }
-    .secondary { color: #e2e8f0; background: #25354e; border-color: #46566e; }
-    .danger { color: #ffe4e6; background: #4c2632; border-color: #854354; }
-    .status { margin-left: auto; }
-    .error { margin: 0 0 .8rem; color: #fda4af; }
-    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: .7rem; }
-    .metric { padding: .85rem .95rem; }
-    .label { color: #94a3b8; font-size: .76rem; }
-    .value { margin-top: .2rem; color: #f8fafc; font-size: 1.35rem; font-weight: 750; font-variant-numeric: tabular-nums; }
-    .unit { margin-top: .18rem; font-size: .72rem; }
-    .track { height: 7px; margin-top: .55rem; overflow: hidden; border-radius: 8px; background: #29384f; }
-    .fill { width: 0; height: 100%; background: #2dd4bf; transition: width .2s ease; }
-    .row { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(290px, .9fr); gap: .8rem; margin-top: .8rem; }
-    .panel { min-width: 0; padding: 1rem; }
-    .panel-title { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .5rem; }
-    canvas { display: block; width: 100%; height: 225px; }
-    #robot-canvas { height: 250px; }
-    .gauge { height: 12px; margin: .6rem 0 .3rem; overflow: hidden; border-radius: 8px; background: #29384f; }
-    .gauge-fill { width: 0; height: 100%; background: linear-gradient(90deg, #f59e0b, #34d399); transition: width .2s ease; }
-    .alert { padding: .65rem .8rem; border-left: 3px solid #2dd4bf; border-radius: 4px; background: #102b34; color: #cbd5e1; font-size: .84rem; }
-    .alert.warning { border-color: #fbbf24; background: #332b17; }
-    .alert.error { border-color: #fb7185; background: #381d2a; }
-    .history { max-height: 210px; overflow: auto; padding-left: 1.2rem; color: #bdc9d8; font-size: .8rem; }
-    .table { width: 100%; border-collapse: collapse; font-size: .82rem; }
-    .table td { padding: .36rem .2rem; border-bottom: 1px solid #29384f; }
-    .table td:last-child { color: #5eead4; text-align: right; font-variant-numeric: tabular-nums; }
-    .note { margin: .9rem 0 0; color: #94a3b8; font-size: .76rem; line-height: 1.55; }
-    @media (max-width: 720px) {
-      header { padding: 1rem; }
-      main { padding: 1rem .75rem 2rem; }
-      .hero { grid-template-columns: 1fr; }
-      .pipeline { grid-template-columns: 1fr; }
-      .row { grid-template-columns: 1fr; }
-      .status { width: 100%; margin-left: 0; }
+    .button:hover:not(:disabled) { border-color: #b6d6cf; background: #f7fbf9; }
+    .button:disabled { cursor: not-allowed; opacity: .48; }
+    .button.primary { border-color: var(--teal); background: var(--teal); color: #fff; }
+    .button.primary:hover:not(:disabled) { border-color: var(--teal-dark); background: var(--teal-dark); }
+    .button.danger { border-color: #f0d7d2; color: #a8463d; }
+    .hero {
+      position: relative; display: grid; min-height: 205px; grid-template-columns: minmax(0, 1.1fr) minmax(180px, .75fr);
+      align-items: center; overflow: hidden; padding: 27px 30px; border: 1px solid #d8e9e3;
+      border-radius: 15px; background: linear-gradient(110deg, #e6f4f0 0%, #edf6f3 54%, #f6f8f3 100%);
+    }
+    .hero-copy { position: relative; z-index: 1; max-width: 500px; }
+    .hero-copy h2 { max-width: 420px; margin: 8px 0; font-size: clamp(21px, 2.7vw, 32px); line-height: 1.15; }
+    .hero-copy p { max-width: 440px; margin-bottom: 16px; color: #637572; font-size: 12px; }
+    .hero-art { position: absolute; right: 0; bottom: -34px; width: min(45%, 430px); height: 250px; opacity: .86; }
+    .hero-art .haze { fill: #d6ebe5; }
+    .hero-art .tower { stroke: #67a9a0; stroke-width: 7; stroke-linecap: round; fill: none; }
+    .hero-art .blade { stroke: #267c7c; stroke-width: 7; stroke-linecap: round; fill: none; }
+    .hero-art .hub { fill: #ed8455; }
+    .hero-art .ground { stroke: #b8d7ce; stroke-width: 2; }
+    .hero-art .small-turbine { opacity: .55; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: 20px; background: #fff; color: var(--teal-dark); font-size: 10px; font-weight: 750; }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
+    .metric, .panel, .phase-card { min-width: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); box-shadow: var(--shadow); }
+    .metric { padding: 15px; }
+    .metric-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .label { color: var(--muted); font-size: 10px; font-weight: 650; }
+    .metric-icon { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 8px; background: #edf6f2; color: var(--teal); font-size: 14px; }
+    .metric-icon.orange { background: #fff1e9; color: #d7774c; }
+    .value { margin-top: 8px; color: var(--ink); font-size: 23px; font-weight: 780; letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
+    .unit { margin-top: 3px; color: #899592; font-size: 10px; }
+    .track, .gauge { height: 5px; margin-top: 9px; overflow: hidden; border-radius: 9px; background: #edf1ef; }
+    .fill, .gauge-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #087f82, #55b69d); transition: width .2s ease; }
+    .gauge-fill { background: linear-gradient(90deg, #edaa62, #29a583); }
+    .content-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(260px, .85fr); gap: 13px; margin-top: 13px; }
+    .content-grid.equal { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .panel { padding: 17px; }
+    .panel-title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 11px; }
+    .panel-subtitle { margin: 3px 0 0; color: var(--muted); font-size: 10px; }
+    canvas { display: block; width: 100%; height: 220px; }
+    #robot-canvas { height: 242px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 10px; }
+    .legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .legend i { width: 7px; height: 7px; border-radius: 50%; background: var(--orange); }
+    .legend .teal-dot { background: var(--teal); }
+    .alert {
+      display: flex; align-items: start; gap: 10px; padding: 12px; border: 1px solid #e1efea;
+      border-radius: 9px; background: #f4faf7; color: #536661; font-size: 11px;
+    }
+    .alert.warning { border-color: #f3dfc5; background: #fff9f0; color: #805c37; }
+    .alert.error { border-color: #f0d3ce; background: #fff5f3; color: #a8463d; }
+    .alert-icon { color: var(--teal); font-size: 15px; }
+    .alert.warning .alert-icon { color: #d58334; }
+    .alert.error .alert-icon { color: var(--red); }
+    .status-list { display: grid; gap: 0; margin-top: 9px; }
+    .status-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid #eff2f0; font-size: 11px; }
+    .status-row:last-child { border-bottom: 0; }
+    .status-row span:first-child { color: #71807d; }
+    .status-value { display: inline-flex; align-items: center; gap: 6px; color: #344845; font-weight: 700; }
+    .status-value .dot { width: 6px; height: 6px; background: #32a482; }
+    .table-wrap { overflow-x: auto; }
+    .table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .table th, .table td { padding: 10px 8px; border-bottom: 1px solid #edf1ef; text-align: left; white-space: nowrap; }
+    .table th { color: #82908d; font-size: 9px; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
+    .table td { color: #50615e; }
+    .table td:last-child, .table th:last-child { text-align: right; }
+    .table td.metric-cell { color: var(--teal-dark); font-weight: 700; }
+    .tag { display: inline-flex; padding: 3px 7px; border-radius: 12px; background: #eaf5f0; color: #28785f; font-size: 9px; font-weight: 750; }
+    .tag.warning { background: #fff2df; color: #a96922; }
+    .history { max-height: 270px; overflow: auto; margin: 0; padding-left: 18px; color: #677773; font-size: 10px; }
+    .history li { padding: 7px 0; border-bottom: 1px solid #eff2f0; }
+    .controls { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin-top: 14px; }
+    label { display: grid; gap: 5px; color: #6d7c78; font-size: 10px; font-weight: 650; }
+    input[type="number"] { width: 104px; min-height: 38px; padding: 0 10px; border: 1px solid #dfe8e4; border-radius: 8px; background: #fff; color: var(--ink); }
+    input[type="range"] { width: 120px; accent-color: var(--teal); }
+    .speed-value { color: var(--teal-dark); font-size: 10px; font-weight: 750; }
+    .error-message { margin: 12px 0 0; padding: 10px 12px; border: 1px solid #f0d3ce; border-radius: 8px; background: #fff5f3; color: #a8463d; font-size: 11px; }
+    .error-message[hidden] { display: none; }
+    .phase-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .phase-card { padding: 17px; }
+    .phase-card.active { border-color: #a9d8cb; background: #f2faf7; }
+    .phase-number { color: var(--teal); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .phase-card h3 { margin: 8px 0 4px; font-size: 13px; }
+    .phase-card p { margin: 0; color: var(--muted); font-size: 10px; }
+    .config-table td:first-child { color: #74827f; }
+    .config-table td:last-child { color: var(--ink); font-weight: 650; text-align: right; }
+    .section-note { margin: 13px 0 0; color: #8b9694; font-size: 10px; line-height: 1.6; }
+    .empty-note { color: #98a4a1; font-size: 11px; }
+    @media (max-width: 1050px) {
+      .app-shell { grid-template-columns: 205px minmax(0, 1fr); }
+      .workspace { padding-right: 22px; padding-left: 22px; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 760px) {
+      .app-shell { display: block; }
+      .sidebar { position: static; width: 100%; height: auto; padding: 12px 14px 9px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .brand { padding: 0 4px 10px; }
+      .nav-label, .sidebar-spacer, .project-card, .sidebar-footer { display: none; }
+      .nav-list { display: flex; overflow-x: auto; gap: 5px; padding-bottom: 2px; scrollbar-width: none; }
+      .nav-list::-webkit-scrollbar { display: none; }
+      .nav-link { min-height: 37px; flex: 0 0 auto; gap: 7px; padding: 0 10px; font-size: 11px; }
+      .nav-icon { font-size: 14px; }
+      .workspace { padding: 0 15px 25px; }
+      .topbar { min-height: 56px; }
+      .date-label { display: none; }
+      .page-view { padding-top: 21px; }
+      .hero { min-height: 220px; grid-template-columns: 1fr; padding: 22px; }
+      .hero-art { right: -24px; bottom: -60px; width: 66%; opacity: .38; }
+      .content-grid, .content-grid.equal { grid-template-columns: 1fr; }
+      .phase-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 460px) {
+      .metrics { gap: 8px; }
+      .metric { padding: 12px; }
+      .value { font-size: 19px; }
+      .workspace { padding-right: 11px; padding-left: 11px; }
+      .topbar-right { gap: 9px; }
+      .server-status { font-size: 10px; }
+      .controls { align-items: stretch; }
+      .controls .button { flex: 1 1 42%; }
+      .hero-copy h2 { font-size: 24px; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <div>
-      <h1>Energy-Aware KUKA Robot Control</h1>
-      <p class="subtitle">Joel Mayinja · Uganda Christian University · Lightweight DQN research prototype</p>
-    </div>
-    <div class="status" role="status" aria-live="polite">
-      <span class="dot" id="status-dot"></span>
-      <span id="status-text">Connecting to local Flask server…</span>
-    </div>
-  </header>
-
-  <main>
-    <section class="hero">
-      <div>
-        <h2>Teacher DQN training & energy monitoring</h2>
-        <p>
-          Train a DQN policy for the six controlled joints of a simulated KUKA iiwa. The dashboard
-          compares its grid-energy draw with a maximum-speed inverse-kinematics baseline on the same seeded task, while
-          tracking the 50 Ws supercapacitor model across light and heavy task phases.
-        </p>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none">
+            <path d="M16 5v17M16 10 7 6M16 10l9-5M16 10l1 11" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+            <circle cx="16" cy="10" r="2.6" fill="#ed8455"/>
+            <path d="M9 26h15M13 22h7l3 4H10l3-4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span><span class="brand-name">WATTWISE</span><br><span class="brand-caption">Energy intelligence</span></span>
       </div>
-      <span class="tag">PyBullet simulation · Not physical hardware</span>
-    </section>
+      <div class="nav-label">Workspace</div>
+      <nav class="nav-list" aria-label="Main navigation">
+        <button class="nav-link active" type="button" data-view-target="overview" aria-current="page"><span class="nav-icon">⌂</span>Overview</button>
+        <button class="nav-link" type="button" data-view-target="monitoring"><span class="nav-icon">◉</span>Live monitoring</button>
+        <button class="nav-link" type="button" data-view-target="detection"><span class="nav-icon">⌁</span>Data detection</button>
+        <button class="nav-link" type="button" data-view-target="management"><span class="nav-icon">⚙</span>Model management</button>
+      </nav>
+      <div class="sidebar-spacer"></div>
+      <div class="project-card">
+        <p class="project-card-title">Research prototype</p>
+        <p>Energy-aware robot control powered by a lightweight Deep Q-Network.</p>
+      </div>
+      <div class="sidebar-footer">KUKA iiwa · Local simulation</div>
+    </aside>
 
-    <section class="pipeline" aria-label="Research project stages">
-      <article class="phase active" id="phase-teacher">
-        <strong>Phase 1 · Teacher DQN</strong><span>Current work · PyTorch, 23 observations, 25 actions</span>
-      </article>
-      <article class="phase" id="phase-student">
-        <strong>Phase 2 · Knowledge distillation</strong><span>Planned · Student network, 200 epochs</span>
-      </article>
-      <article class="phase" id="phase-edge">
-        <strong>Phase 3 · Edge deployment</strong><span>Planned · ONNX Runtime on Raspberry Pi 4</span>
-      </article>
-    </section>
+    <main class="workspace">
+      <header class="topbar">
+        <div class="breadcrumbs">Workspace <span aria-hidden="true">/</span> <strong id="breadcrumb-current">Overview</strong></div>
+        <div class="topbar-right">
+          <span class="date-label">Uganda Christian University · Research dashboard</span>
+          <span class="server-status" role="status" aria-live="polite"><span class="dot" id="status-dot"></span><span id="status-text">Connecting to simulation…</span></span>
+        </div>
+      </header>
 
-    <section class="controls" aria-label="Teacher training controls">
-      <label for="episode-count">Training episodes (1–500)
-        <input id="episode-count" type="number" min="1" max="500" value="3">
-      </label>
-      <button id="start-button" class="primary" type="button">Start teacher training</button>
-      <button id="pause-button" class="secondary" type="button" disabled>Pause</button>
-      <button id="stop-button" class="danger" type="button" disabled>Stop after this step</button>
-      <label for="speed-control">Dashboard playback speed
-        <input id="speed-control" type="range" min="1" max="5" value="3">
-      </label>
-      <button id="reset-button" class="secondary" type="button">Clear results</button>
-      <button id="export-button" class="secondary" type="button">Export episode CSV</button>
-    </section>
-    <p class="note">Start with 1–3 episodes to check the workflow. Your research plan is 500 episodes. Playback speed only changes how quickly updates are shown; it does not change the PyBullet physics.</p>
-    <p id="error-message" class="error" role="alert" hidden></p>
+      <section class="page-view active" id="view-overview" data-title="Overview" aria-labelledby="overview-title">
+        <div class="page-heading">
+          <div><p class="eyebrow">Good to see you, Joel</p><h1 id="overview-title">Energy overview</h1><p class="page-description">A clear view of your robot simulation and its energy performance.</p></div>
+          <button class="button primary" type="button" data-go-view="monitoring">＋ <span>Open live monitor</span></button>
+        </div>
 
-    <section class="metrics" aria-label="Live teacher and energy metrics">
-      <article class="metric">
-        <div class="label">Episode / progress</div><div class="value" id="episode-value">0 / 0</div>
-        <div class="track"><div class="fill" id="episode-progress"></div></div>
-        <div class="unit" id="step-value">0 / 400 simulation steps</div>
-      </article>
-      <article class="metric">
-        <div class="label">Episode reward</div><div class="value" id="reward-value">—</div>
-        <div class="unit">Higher is better; target completion adds 50.</div>
-      </article>
-      <article class="metric">
-        <div class="label">Grid draw · latest step</div><div class="value" id="grid-value">—</div>
-        <div class="unit">Ws per step · peak threshold 3.0 Ws</div>
-      </article>
-      <article class="metric">
-        <div class="label">Peak grid reduction</div><div class="value" id="peak-value">—</div>
-        <div class="unit">Compared with fixed-speed baseline peak.</div>
-      </article>
-      <article class="metric">
-        <div class="label">Task completion rate</div><div class="value" id="completion-value">—</div>
-        <div class="unit">Research target: at least 80%.</div>
-      </article>
-      <article class="metric">
-        <div class="label">Buffer charge</div><div class="value" id="buffer-value">—</div>
-        <div class="gauge"><div class="gauge-fill" id="buffer-progress"></div></div>
-        <div class="unit">50 Ws capacity · 80% charge efficiency</div>
-      </article>
-      <article class="metric">
-        <div class="label">Target distance</div><div class="value" id="distance-value">—</div>
-        <div class="unit">Metres to the current light/heavy target.</div>
-      </article>
-      <article class="metric">
-        <div class="label">Exploration ε / learning loss</div><div class="value" id="epsilon-value">—</div>
-        <div class="unit" id="loss-value">Loss is unavailable until 64 experiences are collected.</div>
-      </article>
-    </section>
+        <section class="hero" aria-label="Project introduction">
+          <div class="hero-copy">
+            <span class="pill"><span class="dot running"></span> Intelligent energy monitoring</span>
+            <h2>Make every movement count.</h2>
+            <p>Train an energy-aware robot controller and compare its live grid draw with a fixed-speed baseline in a simulated KUKA environment.</p>
+            <button class="button" type="button" data-go-view="management">Explore your model <span aria-hidden="true">→</span></button>
+          </div>
+          <svg class="hero-art" viewBox="0 0 460 260" role="img" aria-label="Illustration of wind turbines generating clean energy">
+            <ellipse class="haze" cx="265" cy="218" rx="190" ry="25"/>
+            <path class="ground" d="M58 226c83-15 209-19 347-2"/>
+            <g class="small-turbine" transform="translate(145 97) scale(.62)">
+              <path class="tower" d="M0 0 8 130"/><circle class="hub" r="7"/>
+              <path class="blade" d="M0 0-5-67M0 0 56 33M0 0-57 32"/>
+            </g>
+            <g transform="translate(285 65)">
+              <path class="tower" d="M0 0 14 164"/><circle class="hub" r="9"/>
+              <path class="blade" d="M0 0-8-83M0 0 72 42M0 0-72 41"/>
+            </g>
+            <g class="small-turbine" transform="translate(370 116) scale(.5)">
+              <path class="tower" d="M0 0 8 130"/><circle class="hub" r="7"/>
+              <path class="blade" d="M0 0-5-67M0 0 56 33M0 0-57 32"/>
+            </g>
+          </svg>
+        </section>
 
-    <section class="row">
-      <article class="panel">
-        <div class="panel-title"><h3>Grid draw per simulation step</h3><span class="unit">Maximum-speed baseline vs Teacher DQN · threshold 3.0 Ws</span></div>
-        <canvas id="grid-chart" aria-label="Live grid draw comparison against a constant-speed baseline"></canvas>
-      </article>
-      <article class="panel">
-        <div class="panel-title"><h3>KUKA iiwa arm pose</h3><span class="unit">2D schematic driven by PyBullet joint angles</span></div>
-        <canvas id="robot-canvas" aria-label="Schematic KUKA arm pose using simulated joint angles"></canvas>
-        <div class="unit" id="phase-value">Waiting for simulation…</div>
-      </article>
-    </section>
+        <section class="metrics" aria-label="Key training metrics">
+          <article class="metric"><div class="metric-top"><span class="label">Training progress</span><span class="metric-icon">▤</span></div><div class="value" id="episode-value">0 / 0</div><div class="unit" id="step-value">0 / 400 simulation steps</div><div class="track"><div class="fill" id="episode-progress"></div></div></article>
+          <article class="metric"><div class="metric-top"><span class="label">Latest grid draw</span><span class="metric-icon orange">ϟ</span></div><div class="value" id="grid-value">—</div><div class="unit">Teacher / baseline · Ws per step</div></article>
+          <article class="metric"><div class="metric-top"><span class="label">Peak reduction</span><span class="metric-icon">↘</span></div><div class="value" id="peak-value">—</div><div class="unit">Teacher compared with baseline</div></article>
+          <article class="metric"><div class="metric-top"><span class="label">Task completion</span><span class="metric-icon">✓</span></div><div class="value" id="completion-value">—</div><div class="unit">Completed targets across episodes</div></article>
+        </section>
 
-    <section class="row">
-      <article class="panel">
-        <div class="panel-title"><h3>Energy per episode</h3><span class="unit">Actual environment totals · lower grid energy is better</span></div>
-        <canvas id="episode-chart" aria-label="Episode grid energy compared with the fixed-speed baseline"></canvas>
-      </article>
-      <article class="panel">
-        <h3>Simulation alerts</h3>
-        <p id="alert-box" class="alert" aria-live="polite">Ready. Start a short training run to collect simulation metrics.</p>
-        <h3 style="margin-top: 1rem">Completed episode results</h3>
-        <ol class="history" id="episode-log"><li>No episodes completed yet.</li></ol>
-      </article>
-    </section>
+        <div class="content-grid">
+          <article class="panel">
+            <div class="panel-title"><div><h3>Grid performance</h3><p class="panel-subtitle">Step-by-step energy draw in the current episode</p></div><div class="legend"><span><i class="teal-dot"></i>Teacher DQN</span><span><i></i>Baseline</span></div></div>
+            <canvas id="grid-chart" aria-label="Live grid draw comparison against a constant-speed baseline"></canvas>
+          </article>
+          <article class="panel">
+            <div class="panel-title"><div><h3>Simulation health</h3><p class="panel-subtitle">Your model and environment at a glance</p></div><span class="metric-icon">◉</span></div>
+            <p id="alert-box" class="alert" aria-live="polite"><span class="alert-icon">✓</span><span>Ready. Start a short training run to collect simulation metrics.</span></p>
+            <div class="status-list">
+              <div class="status-row"><span>Model status</span><span class="status-value"><span class="dot"></span><span id="model-status">Waiting to train</span></span></div>
+              <div class="status-row"><span>Energy buffer</span><span class="status-value" id="buffer-value">—</span></div>
+              <div class="status-row"><span>Current phase</span><span class="status-value" id="phase-value">Waiting for simulation…</span></div>
+              <div class="status-row"><span>Target distance</span><span class="status-value" id="distance-value">—</span></div>
+            </div>
+          </article>
+        </div>
+        <div class="content-grid equal">
+          <article class="panel">
+            <div class="panel-title"><div><h3>Episode energy comparison</h3><p class="panel-subtitle">Total grid energy · lower is better</p></div><span class="tag">Simulation</span></div>
+            <canvas id="episode-chart" aria-label="Episode grid energy compared with the fixed-speed baseline"></canvas>
+          </article>
+          <article class="panel">
+            <div class="panel-title"><div><h3>Experiment snapshot</h3><p class="panel-subtitle">Current teacher model signals</p></div></div>
+            <div class="status-list">
+              <div class="status-row"><span>Episode reward</span><span class="status-value" id="reward-value">—</span></div>
+              <div class="status-row"><span>Exploration rate (ε)</span><span class="status-value" id="epsilon-value">—</span></div>
+              <div class="status-row"><span>Latest learning loss</span><span class="status-value" id="loss-value">Available after 64 experiences</span></div>
+              <div class="status-row"><span>Current threshold</span><span class="status-value">3.0 Ws / step</span></div>
+            </div>
+            <p class="section-note">The dashboard reports simulated values; it is not connected to physical robot hardware.</p>
+          </article>
+        </div>
+      </section>
 
-    <section class="row">
-      <article class="panel">
-        <h3>Teacher DQN · project configuration</h3>
-        <table class="table">
-          <tbody>
-            <tr><td>Observation and actions</td><td>23 · 25 discrete</td></tr>
-            <tr><td>Q-network</td><td>256 → 256 → 25</td></tr>
-            <tr><td>Replay / batch</td><td>10,000 / 64</td></tr>
-            <tr><td>Learning rate / γ</td><td>0.001 / 0.99</td></tr>
-            <tr><td>Exploration</td><td>ε: 1.0 × 0.995 / episode · min 0.01</td></tr>
-            <tr><td>Target network</td><td>Every 10 episodes</td></tr>
-            <tr><td>Episode phases</td><td>Light 0–160 · Heavy 161–400</td></tr>
-          </tbody>
-        </table>
-      </article>
-      <article class="panel">
-        <h3>How to read this experiment</h3>
-        <p class="note">Reward combines grid-energy penalty, peak-spike penalty, buffer charging/deployment, target distance and the task-completion bonus. ε is the chance of a random exploratory action. Loss is the DQN's Q-value prediction error; it is not an energy metric.</p>
-        <p class="note">The baseline follows each target with inverse kinematics and maximum joint speed in the same seeded simulation. The 25 DQN actions are discrete velocity commands (one controlled joint at a time), not torque commands; the environment uses PyBullet velocity control. The 2D arm is a schematic of the real simulated joint angles, not a PyBullet camera render.</p>
-        <p class="note">The DAEWOO steel dataset, student distillation, grid-fault scenarios and Raspberry Pi/ONNX execution are later project stages. This dashboard does not claim those are implemented or that a Raspberry Pi is connected.</p>
-      </article>
-    </section>
-  </main>
+      <section class="page-view" id="view-monitoring" data-title="Live monitoring" aria-labelledby="monitoring-title">
+        <div class="page-heading">
+          <div><p class="eyebrow">Simulation control room</p><h1 id="monitoring-title">Live monitoring</h1><p class="page-description">Watch the KUKA simulation, tune playback, and control your training run.</p></div>
+          <span class="pill"><span class="dot" id="monitor-dot"></span><span id="monitor-status">Waiting for connection</span></span>
+        </div>
+        <div class="panel">
+          <div class="panel-title"><div><h3>Teacher training controls</h3><p class="panel-subtitle">Start with a short run to check the workflow.</p></div></div>
+          <div class="controls" aria-label="Teacher training controls">
+            <label for="episode-count">Episodes (1–500)<input id="episode-count" type="number" min="1" max="500" value="3"></label>
+            <button id="start-button" class="button primary" type="button">▶ Start teacher training</button>
+            <button id="pause-button" class="button" type="button" disabled>Ⅱ Pause</button>
+            <button id="stop-button" class="button danger" type="button" disabled>■ Stop run</button>
+            <label for="speed-control">Playback speed <span class="speed-value"><span id="speed-value">3</span> / 5</span><input id="speed-control" type="range" min="1" max="5" value="3"></label>
+            <button id="reset-button" class="button" type="button">Clear results</button>
+            <button id="export-button" class="button" type="button">↓ Export CSV</button>
+          </div>
+          <p class="section-note">Playback speed changes how quickly updates are shown; it does not change PyBullet physics.</p>
+          <p id="error-message" class="error-message" role="alert" hidden></p>
+        </div>
+        <div class="metrics">
+          <article class="metric"><div class="metric-top"><span class="label">Episode reward</span><span class="metric-icon">✦</span></div><div class="value" id="monitor-reward">—</div><div class="unit">Higher is better</div></article>
+          <article class="metric"><div class="metric-top"><span class="label">Energy buffer</span><span class="metric-icon orange">ϟ</span></div><div class="value" id="monitor-buffer">—</div><div class="gauge"><div class="gauge-fill" id="buffer-progress"></div></div><div class="unit">50 Ws capacity · 80% charge efficiency</div></article>
+          <article class="metric"><div class="metric-top"><span class="label">Target distance</span><span class="metric-icon">⌖</span></div><div class="value" id="monitor-distance">—</div><div class="unit">Distance to current task target</div></article>
+          <article class="metric"><div class="metric-top"><span class="label">Learning loss</span><span class="metric-icon">⌁</span></div><div class="value" id="monitor-loss">—</div><div class="unit">Q-value prediction error</div></article>
+        </div>
+        <div class="content-grid">
+          <article class="panel">
+            <div class="panel-title"><div><h3>Live energy draw</h3><p class="panel-subtitle">Teacher DQN against maximum-speed inverse-kinematics baseline</p></div><span class="tag">Peak limit 3.0 Ws</span></div>
+            <canvas id="grid-chart-monitor" aria-label="Live energy draw during the simulation"></canvas>
+          </article>
+          <article class="panel">
+            <div class="panel-title"><div><h3>KUKA iiwa arm pose</h3><p class="panel-subtitle">A schematic driven by the simulated joint angles</p></div><span class="tag">6 active joints</span></div>
+            <canvas id="robot-canvas" aria-label="Schematic KUKA arm pose using simulated joint angles"></canvas>
+            <p class="section-note" id="robot-caption">Joint angle schematic · final wrist joint locked.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="page-view" id="view-detection" data-title="Data detection" aria-labelledby="detection-title">
+        <div class="page-heading">
+          <div><p class="eyebrow">Signals and diagnostics</p><h1 id="detection-title">Data detection</h1><p class="page-description">Review model signals, simulation thresholds, and completed episode outcomes.</p></div>
+          <span class="pill">⌁ Live signals</span>
+        </div>
+        <div class="content-grid equal">
+          <article class="panel">
+            <div class="panel-title"><div><h3>Signal quality</h3><p class="panel-subtitle">Metrics collected by the current environment</p></div></div>
+            <div class="status-list">
+              <div class="status-row"><span>Teacher grid draw</span><span class="status-value" id="detection-agent-draw">—</span></div>
+              <div class="status-row"><span>Baseline grid draw</span><span class="status-value" id="detection-baseline-draw">—</span></div>
+              <div class="status-row"><span>Peak threshold</span><span class="status-value">3.0 Ws per step</span></div>
+              <div class="status-row"><span>Simulation data</span><span class="status-value"><span class="dot" id="data-status-dot"></span><span id="data-status">Waiting for server</span></span></div>
+            </div>
+          </article>
+          <article class="panel">
+            <div class="panel-title"><div><h3>Risk monitor</h3><p class="panel-subtitle">Live threshold and training notifications</p></div><span class="metric-icon orange">!</span></div>
+            <p id="detection-alert" class="alert"><span class="alert-icon">✓</span><span>Waiting for simulation data.</span></p>
+            <p class="section-note">Alerts describe model simulation output. This project does not monitor a live industrial installation.</p>
+          </article>
+        </div>
+        <article class="panel" style="margin-top:13px">
+          <div class="panel-title"><div><h3>Completed episode results</h3><p class="panel-subtitle">Energy, target completion, and peak reduction by run</p></div><button id="export-button-detection" class="button" type="button">↓ Export CSV</button></div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Episode</th><th>Reward</th><th>Teacher energy</th><th>Baseline energy</th><th>Peak reduction</th><th>Target</th></tr></thead>
+              <tbody id="results-table"><tr><td colspan="6" class="empty-note">No episodes completed yet.</td></tr></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="page-view" id="view-management" data-title="Model management" aria-labelledby="management-title">
+        <div class="page-heading">
+          <div><p class="eyebrow">Research roadmap</p><h1 id="management-title">Model management</h1><p class="page-description">Track the teacher model configuration and the next stages of the research project.</p></div>
+          <button class="button primary" type="button" data-go-view="monitoring">▶ <span>Train teacher</span></button>
+        </div>
+        <div class="phase-grid" aria-label="Research project stages">
+          <article class="phase-card active"><span class="phase-number">Phase 01 · In progress</span><h3>Teacher DQN</h3><p>Train and evaluate the PyTorch teacher policy in the simulated KUKA environment.</p></article>
+          <article class="phase-card"><span class="phase-number">Phase 02 · Planned</span><h3>Knowledge distillation</h3><p>Train a smaller student network to reproduce the teacher's policy.</p></article>
+          <article class="phase-card"><span class="phase-number">Phase 03 · Planned</span><h3>Edge deployment</h3><p>Export to ONNX and evaluate inference on a Raspberry Pi 4.</p></article>
+        </div>
+        <div class="content-grid equal">
+          <article class="panel">
+            <div class="panel-title"><div><h3>Teacher DQN configuration</h3><p class="panel-subtitle">Current research prototype settings</p></div><span class="tag">PyTorch</span></div>
+            <div class="table-wrap"><table class="table config-table"><tbody>
+              <tr><td>Observation space</td><td>23 values</td></tr><tr><td>Discrete actions</td><td>25</td></tr>
+              <tr><td>Q-network layers</td><td>256 → 256 → 25</td></tr><tr><td>Replay buffer / batch</td><td>10,000 / 64</td></tr>
+              <tr><td>Learning rate / γ</td><td>0.001 / 0.99</td></tr><tr><td>Exploration schedule</td><td>ε: 1.0 × 0.995 · min 0.01</td></tr>
+              <tr><td>Target network update</td><td>Every 10 episodes</td></tr><tr><td>Episode phases</td><td>Light 0–160 · Heavy 161–400</td></tr>
+            </tbody></table></div>
+          </article>
+          <article class="panel">
+            <div class="panel-title"><div><h3>Training history</h3><p class="panel-subtitle">Most recent completed episodes</p></div><button id="export-button-management" class="button" type="button">↓ Export CSV</button></div>
+            <ol class="history" id="episode-log"><li>No episodes completed yet.</li></ol>
+          </article>
+        </div>
+        <article class="panel" style="margin-top:13px">
+          <div class="panel-title"><div><h3>About this experiment</h3><p class="panel-subtitle">Interpret results in the right context</p></div></div>
+          <p class="section-note">The baseline follows each target with inverse kinematics and maximum joint speed in the same seeded simulation. DQN actions are discrete velocity commands, not torque commands. The robot pose is an angle-based 2D schematic, not a PyBullet camera render. The dataset calibration, distillation, grid-fault scenarios, and Raspberry Pi/ONNX execution are planned stages, not currently implemented results.</p>
+        </article>
+      </section>
+    </main>
+  </div>
 
   <script>
     const $ = (id) => document.getElementById(id);
@@ -232,31 +425,41 @@
     let lastSeriesLength = -1;
     let lastRunId = -1;
     let polling = false;
+    let latestState = null;
+    let pollTimer = null;
+    let pollDelay = 800;
+
+    function setPollDelay(delay) {
+      if (pollDelay === delay && pollTimer) return;
+      pollDelay = delay;
+      if (pollTimer) window.clearInterval(pollTimer);
+      pollTimer = window.setInterval(poll, delay);
+    }
 
     function fmt(value, digits = 2) {
       return typeof value === "number" && Number.isFinite(value) ? value.toFixed(digits) : "—";
     }
 
     function chartAxes(ctx, width, height, min, max, unit) {
-      const box = { left: 44, right: 12, top: 24, bottom: 28 };
-      ctx.strokeStyle = "#46566e";
+      const box = { left: 48, right: 12, top: 25, bottom: 28 };
+      ctx.strokeStyle = "#e5ece8";
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(box.left, box.top);
       ctx.lineTo(box.left, height - box.bottom);
       ctx.lineTo(width - box.right, height - box.bottom);
       ctx.stroke();
-      ctx.fillStyle = "#94a3b8";
-      ctx.font = "11px Segoe UI, sans-serif";
+      ctx.fillStyle = "#84928e";
+      ctx.font = "10px Segoe UI, sans-serif";
       ctx.fillText(`${max.toFixed(1)} ${unit}`, 2, box.top + 4);
       ctx.fillText(`${min.toFixed(1)} ${unit}`, 2, height - box.bottom);
       return box;
     }
 
-    function prepareCanvas(id) {
+    function prepareCanvas(id, height = 220) {
       const canvas = $(id);
+      if (!canvas) return null;
       const width = Math.max(280, canvas.clientWidth);
-      const height = 225;
       const ratio = window.devicePixelRatio || 1;
       canvas.width = width * ratio;
       canvas.height = height * ratio;
@@ -266,13 +469,15 @@
       return { canvas, ctx, width, height };
     }
 
-    function drawGridChart(series) {
-      const { ctx, width, height } = prepareCanvas("grid-chart");
-      ctx.fillStyle = "#94a3b8";
-      ctx.font = "11px Segoe UI, sans-serif";
-      ctx.fillText("Actual simulated grid draw (Ws / step)", 45, 14);
+    function drawGridChart(canvasId, series) {
+      const drawing = prepareCanvas(canvasId);
+      if (!drawing) return;
+      const { ctx, width, height } = drawing;
+      ctx.fillStyle = "#879490";
+      ctx.font = "10px Segoe UI, sans-serif";
+      ctx.fillText("Simulated grid draw · Ws per step", 48, 14);
       if (!series.length) {
-        ctx.fillText("Waiting for the seeded baseline and DQN episode…", 45, 48);
+        ctx.fillText("Start training to see the baseline and teacher policy.", 48, 49);
         return;
       }
       const values = series.flatMap((point) => [point.agent, point.baseline]).filter(Number.isFinite);
@@ -280,14 +485,13 @@
       const box = chartAxes(ctx, width, height, 0, max, "Ws");
       const thresholdY = box.top + (max - 3) / max * (height - box.top - box.bottom);
       ctx.setLineDash([5, 4]);
-      ctx.strokeStyle = "#fb7185";
+      ctx.strokeStyle = "#dc8b6b";
       ctx.beginPath();
       ctx.moveTo(box.left, thresholdY);
       ctx.lineTo(width - box.right, thresholdY);
       ctx.stroke();
       ctx.setLineDash([]);
-
-      for (const [key, color] of [["baseline", "#fbbf24"], ["agent", "#2dd4bf"]]) {
+      for (const [key, color] of [["baseline", "#ed9a65"], ["agent", "#087f82"]]) {
         const points = series.map((item, index) => ({ index, value: item[key] })).filter((item) => Number.isFinite(item.value));
         if (!points.length) continue;
         ctx.strokeStyle = color;
@@ -296,23 +500,21 @@
         points.forEach((point, index) => {
           const x = box.left + point.index / Math.max(1, series.length - 1) * (width - box.left - box.right);
           const y = box.top + (max - point.value) / max * (height - box.top - box.bottom);
-          if (index === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
+          if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         });
         ctx.stroke();
       }
-      ctx.fillStyle = "#fbbf24"; ctx.fillText("Baseline", box.left + 5, height - 7);
-      ctx.fillStyle = "#2dd4bf"; ctx.fillText("Teacher DQN", box.left + 78, height - 7);
-      ctx.fillStyle = "#fb7185"; ctx.fillText("Peak limit", box.left + 175, height - 7);
     }
 
     function drawEpisodeChart(history) {
-      const { ctx, width, height } = prepareCanvas("episode-chart");
-      ctx.fillStyle = "#94a3b8";
-      ctx.font = "11px Segoe UI, sans-serif";
-      ctx.fillText("Total grid energy per episode (Ws)", 45, 14);
+      const drawing = prepareCanvas("episode-chart");
+      if (!drawing) return;
+      const { ctx, width, height } = drawing;
+      ctx.fillStyle = "#879490";
+      ctx.font = "10px Segoe UI, sans-serif";
+      ctx.fillText("Total grid energy per episode · Ws", 48, 14);
       if (!history.length) {
-        ctx.fillText("Complete an episode to compare real environment totals.", 45, 48);
+        ctx.fillText("Complete an episode to compare energy totals.", 48, 49);
         return;
       }
       const values = history.flatMap((item) => [item.grid_energy, item.baseline_grid_energy]).filter(Number.isFinite);
@@ -323,61 +525,91 @@
       history.forEach((item, index) => {
         const x = box.left + index * groupWidth + groupWidth / 2;
         for (const [value, color, offset] of [
-          [item.baseline_grid_energy, "#fbbf24", -barWidth * .55],
-          [item.grid_energy, "#2dd4bf", barWidth * .55]
+          [item.baseline_grid_energy, "#ed9a65", -barWidth * .55],
+          [item.grid_energy, "#087f82", barWidth * .55]
         ]) {
           const barHeight = value / max * (height - box.top - box.bottom);
           ctx.fillStyle = color;
           ctx.fillRect(x + offset - barWidth / 2, height - box.bottom - barHeight, barWidth, barHeight);
         }
       });
-      ctx.fillStyle = "#fbbf24"; ctx.fillText("Baseline", box.left + 5, height - 7);
-      ctx.fillStyle = "#2dd4bf"; ctx.fillText("Teacher DQN", box.left + 78, height - 7);
     }
 
     function drawRobot(joints = []) {
-      const { ctx, width, height } = prepareCanvas("robot-canvas");
+      const drawing = prepareCanvas("robot-canvas", 242);
+      if (!drawing) return;
+      const { ctx, width, height } = drawing;
       const originX = width * .5;
-      const originY = height - 28;
+      const originY = height - 31;
       const lengths = [34, 32, 30, 28, 25, 22];
       let x = originX;
       let y = originY;
       let angle = -Math.PI / 2;
-      ctx.fillStyle = "#64748b";
-      ctx.fillRect(originX - 36, originY, 72, 12);
+      ctx.fillStyle = "#dce8e3";
+      ctx.fillRect(originX - 40, originY, 80, 13);
       ctx.lineWidth = 9;
       ctx.lineCap = "round";
       for (let index = 0; index < lengths.length; index += 1) {
         angle += (Number(joints[index]) || 0) * (index % 2 === 0 ? 1 : .65);
         const nextX = x + Math.cos(angle) * lengths[index];
         const nextY = y + Math.sin(angle) * lengths[index];
-        ctx.strokeStyle = index < 3 ? "#0d9488" : "#2dd4bf";
+        ctx.strokeStyle = index < 3 ? "#78bcb1" : "#087f82";
         ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(nextX, nextY); ctx.stroke();
-        ctx.fillStyle = "#e2e8f0";
+        ctx.fillStyle = "#fff";
         ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = "#087f82"; ctx.lineWidth = 2; ctx.stroke();
         x = nextX; y = nextY;
       }
-      ctx.fillStyle = "#fbbf24";
+      ctx.fillStyle = "#ed8455";
       ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#94a3b8";
-      ctx.font = "11px Segoe UI, sans-serif";
-      ctx.fillText("Joints 0–5 · angle-based 2D schematic · wrist joint 6 locked", 8, 15);
     }
 
+    function setActiveView(view, updateHash = true) {
+      const target = $(`view-${view}`) ? view : "overview";
+      document.querySelectorAll(".page-view").forEach((page) => page.classList.toggle("active", page.id === `view-${target}`));
+      document.querySelectorAll("[data-view-target]").forEach((button) => {
+        const active = button.dataset.viewTarget === target;
+        button.classList.toggle("active", active);
+        if (active) button.setAttribute("aria-current", "page");
+        else button.removeAttribute("aria-current");
+      });
+      $("breadcrumb-current").textContent = $(`view-${target}`).dataset.title;
+      if (updateHash && location.hash !== `#${target}`) history.replaceState(null, "", `#${target}`);
+      if (target === "monitoring") {
+        drawGridChart("grid-chart-monitor", latestState?.series || []);
+        drawRobot(latestState?.joint_positions || []);
+      }
+    }
+
+    document.querySelectorAll("[data-view-target]").forEach((button) => {
+      button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
+    });
+    document.querySelectorAll("[data-go-view]").forEach((button) => {
+      button.addEventListener("click", () => setActiveView(button.dataset.goView));
+    });
+    window.addEventListener("hashchange", () => setActiveView(location.hash.slice(1), false));
+    if (location.hash) setActiveView(location.hash.slice(1), false);
+
     function render(state) {
+      latestState = state;
       const messages = {
-        idle: state.pybullet_available ? "Ready · local PyBullet simulation" : "PyBullet unavailable · setup needed",
-        running: state.stage === "baseline" ? "Measuring fixed-speed baseline" : "Teacher DQN training",
+        idle: state.pybullet_available ? "Ready · local simulation" : "PyBullet unavailable",
+        running: state.stage === "baseline" ? "Measuring baseline" : "Training",
         paused: "Training paused",
-        completed: "Teacher training completed",
+        completed: "Training complete",
         stopped: "Training stopped",
         error: "Training failed"
       };
       $("status-text").textContent = messages[state.status] || "Local simulation";
       $("status-dot").className = `dot${state.status === "running" ? " running" : state.status === "error" || !state.pybullet_available ? " error" : ""}`;
+      $("monitor-dot").className = `dot${state.status === "running" ? " running" : state.status === "error" || !state.pybullet_available ? " error" : ""}`;
+      $("monitor-status").textContent = messages[state.status] || "Local simulation";
+      $("model-status").textContent = messages[state.status] || "Local simulation";
+      $("data-status").textContent = state.pybullet_available ? "Connected" : "PyBullet unavailable";
+      $("data-status-dot").className = `dot${state.pybullet_available ? " running" : " error"}`;
       $("start-button").disabled = ["running", "paused"].includes(state.status) || !state.pybullet_available;
       $("pause-button").disabled = !["running", "paused"].includes(state.status);
-      $("pause-button").textContent = state.status === "paused" ? "Resume" : "Pause";
+      $("pause-button").textContent = state.status === "paused" ? "▶ Resume" : "Ⅱ Pause";
       $("stop-button").disabled = !["running", "paused"].includes(state.status);
       $("error-message").hidden = !state.error;
       $("error-message").textContent = state.error ? `Training error: ${state.error}` : "";
@@ -385,14 +617,21 @@
       $("step-value").textContent = `${state.episode_step || 0} / ${state.max_steps || 400} simulation steps`;
       $("episode-progress").style.width = `${Math.min(100, 100 * (state.episode_step || 0) / (state.max_steps || 400))}%`;
       $("reward-value").textContent = fmt(state.reward);
+      $("monitor-reward").textContent = fmt(state.reward);
       $("grid-value").textContent = `${fmt(state.agent_grid_draw)} / ${fmt(state.baseline_grid_draw)} Ws`;
       $("buffer-value").textContent = `${fmt(state.buffer_level)} / 50 Ws`;
+      $("monitor-buffer").textContent = `${fmt(state.buffer_level)} Ws`;
       $("buffer-progress").style.width = `${Math.max(0, Math.min(100, (state.buffer_level || 0) / 50 * 100))}%`;
       $("distance-value").textContent = `${fmt(state.distance)} m`;
+      $("monitor-distance").textContent = `${fmt(state.distance)} m`;
       $("epsilon-value").textContent = fmt(state.epsilon, 3);
-      $("loss-value").textContent = state.loss == null ? "Loss appears after 64 stored experiences." : `Latest batch loss: ${fmt(state.loss, 5)}`;
+      $("loss-value").textContent = state.loss == null ? "Available after 64 experiences" : fmt(state.loss, 5);
+      $("monitor-loss").textContent = state.loss == null ? "—" : fmt(state.loss, 5);
       $("speed-control").value = state.speed || 3;
-      $("phase-value").textContent = state.episode_step ? (state.phase === 0 ? "Phase 0 · light task · charging buffer" : "Phase 1 · heavy task · deploying buffer") : "Waiting for simulation…";
+      $("speed-value").textContent = state.speed || 3;
+      $("phase-value").textContent = state.episode_step ? (state.phase === 0 ? "Light task · charging buffer" : "Heavy task · using buffer") : "Waiting for simulation…";
+      $("detection-agent-draw").textContent = `${fmt(state.agent_grid_draw)} Ws`;
+      $("detection-baseline-draw").textContent = `${fmt(state.baseline_grid_draw)} Ws`;
 
       const last = currentHistory[currentHistory.length - 1];
       $("peak-value").textContent = last ? `${fmt(last.peak_reduction_percent)}%` : "—";
@@ -400,10 +639,11 @@
       $("completion-value").textContent = currentHistory.length ? `${fmt(completions / currentHistory.length * 100, 1)}%` : "—";
       drawRobot(state.joint_positions);
       if (state.series.length !== lastSeriesLength || state.status === "running") {
-        drawGridChart(state.series);
+        drawGridChart("grid-chart", state.series);
+        drawGridChart("grid-chart-monitor", state.series);
         lastSeriesLength = state.series.length;
       }
-      if (state.run_id !== lastRunId || currentHistory.length !== (state.history || []).length) {
+      if (state.run_id !== lastRunId || (state.history || []).length !== currentHistory.length) {
         lastRunId = state.run_id;
         currentHistory = state.history || [];
         drawEpisodeChart(currentHistory);
@@ -414,31 +654,56 @@
         } else {
           currentHistory.slice().reverse().forEach((item) => {
             const row = document.createElement("li");
-            row.textContent = `Ep ${item.episode}: reward ${fmt(item.reward)}, grid ${fmt(item.grid_energy)} / baseline ${fmt(item.baseline_grid_energy)} Ws, peak reduction ${fmt(item.peak_reduction_percent)}%, ${item.task_done ? "target reached" : "target not reached"}`;
+            row.textContent = `Episode ${item.episode}: reward ${fmt(item.reward)}, grid ${fmt(item.grid_energy)} / baseline ${fmt(item.baseline_grid_energy)} Ws, peak reduction ${fmt(item.peak_reduction_percent)}%, ${item.task_done ? "target reached" : "target not reached"}`;
             log.append(row);
+          });
+        }
+        const table = $("results-table");
+        table.replaceChildren();
+        if (!currentHistory.length) {
+          const row = table.insertRow();
+          const cell = row.insertCell(); cell.colSpan = 6; cell.className = "empty-note"; cell.textContent = "No episodes completed yet.";
+        } else {
+          currentHistory.slice().reverse().forEach((item) => {
+            const row = table.insertRow();
+            [item.episode, fmt(item.reward), `${fmt(item.grid_energy)} Ws`, `${fmt(item.baseline_grid_energy)} Ws`, `${fmt(item.peak_reduction_percent)}%`, item.task_done ? "Target reached" : "Not reached"].forEach((value, index) => {
+              const cell = row.insertCell(); cell.textContent = value;
+              if (index === 4) cell.className = "metric-cell";
+              if (index === 5) { const tag = document.createElement("span"); tag.className = `tag${item.task_done ? "" : " warning"}`; tag.textContent = value; cell.replaceChildren(tag); }
+            });
           });
         }
       }
 
       const alert = $("alert-box");
-      alert.className = "alert";
+      const detectionAlert = $("detection-alert");
+      const setAlert = (element, kind, message) => {
+        element.className = `alert${kind ? ` ${kind}` : ""}`;
+        element.replaceChildren();
+        const icon = document.createElement("span"); icon.className = "alert-icon"; icon.textContent = kind === "error" ? "!" : kind === "warning" ? "△" : "✓";
+        const text = document.createElement("span"); text.textContent = message;
+        element.append(icon, text);
+      };
       if (state.error) {
-        alert.classList.add("error");
-        alert.textContent = state.error;
+        setAlert(alert, "error", state.error); setAlert(detectionAlert, "error", state.error);
       } else if (!state.pybullet_available) {
-        alert.classList.add("warning");
-        alert.textContent = "PyBullet is not installed in this Python environment. Follow Setup in README.md, then restart the dashboard.";
+        const message = "PyBullet is not installed in this Python environment. Install project requirements and restart the Flask dashboard.";
+        setAlert(alert, "warning", message); setAlert(detectionAlert, "warning", message);
       } else if (state.agent_grid_draw > 3) {
-        alert.classList.add("warning");
-        alert.textContent = `Teacher grid draw ${fmt(state.agent_grid_draw)} Ws exceeded the 3.0 Ws peak threshold at this step.`;
+        const message = `Teacher grid draw ${fmt(state.agent_grid_draw)} Ws exceeded the 3.0 Ws peak threshold at this step.`;
+        setAlert(alert, "warning", message); setAlert(detectionAlert, "warning", message);
       } else if (state.status === "running" && state.stage === "baseline") {
-        alert.textContent = "Measuring the constant-speed controller first using the episode's seeded KUKA task.";
+        const message = "Measuring the constant-speed controller on the episode's seeded KUKA task.";
+        setAlert(alert, "", message); setAlert(detectionAlert, "", message);
       } else if (state.status === "running") {
-        alert.textContent = `Teacher episode ${state.episode}: monitoring grid draw, target distance, buffer charge and reward.`;
+        const message = `Teacher episode ${state.episode}: monitoring energy draw, target distance, and buffer charge.`;
+        setAlert(alert, "", message); setAlert(detectionAlert, "", message);
       } else if (last) {
-        alert.textContent = `${completions}/${currentHistory.length} tasks completed. Results are simulation measurements, not physical robot tests.`;
+        const message = `${completions}/${currentHistory.length} tasks completed. Results are simulation measurements, not physical robot tests.`;
+        setAlert(alert, "", message); setAlert(detectionAlert, "", message);
       } else {
-        alert.textContent = "Ready. Start a short training run to collect KUKA simulation metrics.";
+        const message = "Ready. Start a short training run to collect KUKA simulation metrics.";
+        setAlert(alert, "", message); setAlert(detectionAlert, "", message);
       }
     }
 
@@ -448,6 +713,10 @@
         headers: body === undefined ? {} : { "Content-Type": "application/json" },
         body: body === undefined ? undefined : JSON.stringify(body)
       });
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        throw new Error("The Flask dashboard is not connected. Start it with: python -m src.dashboard");
+      }
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || `Server returned ${response.status}`);
       return data;
@@ -458,11 +727,25 @@
       polling = true;
       try {
         render(await api("/api/status"));
+        setPollDelay(800);
       } catch (error) {
-        $("status-text").textContent = "Cannot connect · start the Flask server";
+        $("status-text").textContent = "Flask server not connected";
         $("status-dot").className = "dot error";
+        $("monitor-dot").className = "dot error";
+        $("monitor-status").textContent = "Server not connected";
+        $("model-status").textContent = "Server not connected";
+        $("start-button").disabled = true;
+        $("data-status").textContent = "Server not connected";
+        $("data-status-dot").className = "dot error";
         $("error-message").hidden = false;
         $("error-message").textContent = error.message;
+        const message = "Static preview only. Start the Flask dashboard to connect the simulation and training controls.";
+        for (const id of ["alert-box", "detection-alert"]) {
+          const alert = $(id); alert.className = "alert warning"; alert.replaceChildren();
+          const icon = document.createElement("span"); icon.className = "alert-icon"; icon.textContent = "!";
+          const text = document.createElement("span"); text.textContent = message; alert.append(icon, text);
+        }
+        setPollDelay(5000);
       } finally {
         polling = false;
       }
@@ -478,18 +761,11 @@
       }
     }
 
-    $("start-button").addEventListener("click", () => postAndRefresh("/api/train", { episodes: Number($("episode-count").value) }));
-    $("pause-button").addEventListener("click", () => postAndRefresh($("pause-button").textContent === "Resume" ? "/api/resume" : "/api/pause", {}));
-    $("stop-button").addEventListener("click", () => postAndRefresh("/api/stop", {}));
-    $("reset-button").addEventListener("click", async () => {
-      try { render(await api("/api/reset", {})); }
-      catch (error) { $("error-message").hidden = false; $("error-message").textContent = error.message; }
-    });
-    $("speed-control").addEventListener("input", () => postAndRefresh("/api/speed", { speed: Number($("speed-control").value) }));
-    $("export-button").addEventListener("click", () => {
+    function exportHistory() {
       if (!currentHistory.length) {
         $("error-message").hidden = false;
         $("error-message").textContent = "Complete an episode before exporting training results.";
+        setActiveView("monitoring");
         return;
       }
       const columns = ["episode", "steps", "reward", "grid_energy_ws", "baseline_grid_energy_ws", "peak_grid_draw", "baseline_peak_grid_draw", "peak_reduction_percent", "task_done", "distance_m", "buffer_used_ws", "epsilon", "mean_loss"];
@@ -500,13 +776,32 @@
       const link = document.createElement("a");
       link.href = url; link.download = "training_history.csv"; link.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    $("start-button").addEventListener("click", () => postAndRefresh("/api/train", { episodes: Number($("episode-count").value) }));
+    $("pause-button").addEventListener("click", () => postAndRefresh($("pause-button").textContent.includes("Resume") ? "/api/resume" : "/api/pause", {}));
+    $("stop-button").addEventListener("click", () => postAndRefresh("/api/stop", {}));
+    $("reset-button").addEventListener("click", async () => {
+      try { render(await api("/api/reset", {})); }
+      catch (error) { $("error-message").hidden = false; $("error-message").textContent = error.message; }
     });
-    window.addEventListener("resize", () => { drawRobot(); drawGridChart([]); drawEpisodeChart(currentHistory); });
+    $("speed-control").addEventListener("input", () => {
+      $("speed-value").textContent = $("speed-control").value;
+      postAndRefresh("/api/speed", { speed: Number($("speed-control").value) });
+    });
+    ["export-button", "export-button-detection", "export-button-management"].forEach((id) => $(id).addEventListener("click", exportHistory));
+    window.addEventListener("resize", () => {
+      drawRobot(latestState?.joint_positions || []);
+      drawGridChart("grid-chart", latestState?.series || []);
+      drawGridChart("grid-chart-monitor", latestState?.series || []);
+      drawEpisodeChart(currentHistory);
+    });
     drawRobot();
-    drawGridChart([]);
+    drawGridChart("grid-chart", []);
+    drawGridChart("grid-chart-monitor", []);
     drawEpisodeChart([]);
     poll();
-    window.setInterval(poll, 800);
+    setPollDelay(800);
   </script>
 </body>
 </html>

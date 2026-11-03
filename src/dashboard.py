@@ -172,6 +172,11 @@ def dashboard_page():
     return send_from_directory(WEB_ROOT, "index.html")
 
 
+@app.get("/assets/<path:filename>")
+def dashboard_asset(filename):
+    return send_from_directory(WEB_ROOT / "assets", filename)
+
+
 @app.get("/api/status")
 def training_status():
     return jsonify(**controller.snapshot(), pybullet_available=pybullet_available())

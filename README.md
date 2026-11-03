@@ -96,6 +96,16 @@ Q-value prediction error. The arm image is a schematic driven by the simulated j
 angles, not a PyBullet camera render. A short run verifies the workflow, but does not
 establish that the agent has learned a good policy.
 
+## Personalize the dashboard
+
+Open the project folder in VS Code, press **Ctrl+P**, and enter `web/index.html`.
+The visible navigation labels and dashboard text are HTML in that file; the colors,
+spacing, and responsive layout are in its `<style>` block. To use your own photo or
+diagram, put the image in `web/assets/` and reference it from the HTML with a path such
+as `/assets/robot-demo.jpg`. The Flask dashboard serves files from this assets folder.
+For a static preview, restart `python -m http.server 8000 --directory web` and use
+`http://127.0.0.1:8000`.
+
 If training reports a missing module, finish installing `requirements.txt` inside the
 same `.venv` and restart the server. If PyBullet reports a compiler error, verify Visual
 Studio Build Tools' C++ workload is installed, reopen PowerShell, and retry installation.
