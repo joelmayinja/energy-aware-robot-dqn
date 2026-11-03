@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360" viewBox="0 0 1280 360" role="img" aria-labelledby="title description">
+  <title id="title">Energy-aware robot control research</title>
+  <desc id="description">A simulated robot arm, energy chart, and research pipeline from steel-industry data to a planned lightweight edge controller.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f0f8f5"/>
+      <stop offset="1" stop-color="#e4f0ed"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset="1" stop-color="#f7fbf9"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#174d48" flood-opacity=".10"/>
+    </filter>
+  </defs>
+  <rect width="1280" height="360" rx="26" fill="url(#background)"/>
+  <circle cx="1160" cy="12" r="205" fill="#d7ebe5" opacity=".55"/>
+  <circle cx="1005" cy="338" r="150" fill="#d7ebe5" opacity=".42"/>
+  <path d="M0 302c175-45 278 25 428-8s263-38 404-2 273 39 448-5v73H0Z" fill="#dcece6" opacity=".72"/>
+
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <rect x="54" y="46" width="9" height="45" rx="4.5" fill="#ed8455"/>
+    <text x="82" y="62" fill="#087f82" font-size="13" font-weight="700" letter-spacing="3">RESEARCH PROTOTYPE</text>
+    <text x="80" y="116" fill="#172a2c" font-size="38" font-weight="750" letter-spacing="-1.5">Energy-aware robot control</text>
+    <text x="82" y="151" fill="#526561" font-size="17">Lightweight Deep Q-Learning · KUKA iiwa simulation</text>
+    <text x="82" y="183" fill="#70807b" font-size="13">Mayinja Joel  ·  Uganda Christian University</text>
+
+    <g transform="translate(82 222)">
+      <rect width="145" height="35" rx="17.5" fill="#fff" opacity=".95"/>
+      <circle cx="19" cy="17.5" r="5" fill="#26a27d"/>
+      <text x="33" y="22" fill="#35524b" font-size="12" font-weight="650">Simulation-first</text>
+      <rect x="156" width="144" height="35" rx="17.5" fill="#fff" opacity=".95"/>
+      <path d="M176 22l6-9 5 5 7-11" fill="none" stroke="#087f82" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="202" y="22" fill="#35524b" font-size="12" font-weight="650">Energy-aware</text>
+      <rect x="311" width="128" height="35" rx="17.5" fill="#fff" opacity=".95"/>
+      <path d="M330 11h12v13h-12zM333 8h6" fill="none" stroke="#ed8455" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="350" y="22" fill="#35524b" font-size="12" font-weight="650">Edge planned</text>
+    </g>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="720" y="44" width="500" height="270" rx="22" fill="url(#card)" stroke="#dce9e4"/>
+  </g>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <text x="750" y="75" fill="#172a2c" font-size="13" font-weight="700">TEACHER POLICY · ENERGY SIGNALS</text>
+    <circle cx="1167" cy="70" r="4" fill="#ed8455"/>
+    <text x="1178" y="74" fill="#788681" font-size="10">SIMULATED SIGNALS</text>
+
+    <g transform="translate(760 100)">
+      <rect width="195" height="107" rx="13" fill="#f3f8f6" stroke="#e5eeea"/>
+      <text x="15" y="22" fill="#778680" font-size="10" font-weight="650">GRID DRAW · SIMULATED</text>
+      <path d="M17 81h160M17 58h160M17 35h160" stroke="#e1ebe6" stroke-width="1"/>
+      <path d="M20 74c19-4 23-25 41-21s21 22 38 11 19-25 35-18 25-2 42-19" fill="none" stroke="#ed9a65" stroke-width="3" stroke-linecap="round"/>
+      <path d="M20 84c16-2 22-13 40-12s22-10 38-7 21-14 37-14 23-8 41-20" fill="none" stroke="#087f82" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="178" cy="27" r="3" fill="#087f82"/>
+    </g>
+
+    <g transform="translate(1004 100)">
+      <rect width="187" height="107" rx="13" fill="#f3f8f6" stroke="#e5eeea"/>
+      <text x="15" y="22" fill="#778680" font-size="10" font-weight="650">KUKA ARM · 6 JOINTS</text>
+      <path d="M28 87h132" stroke="#dce8e2" stroke-width="8" stroke-linecap="round"/>
+      <path d="M80 82 73 60 93 47 108 30 126 36" fill="none" stroke="#087f82" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="80" cy="82" r="6" fill="#fff" stroke="#087f82" stroke-width="3"/>
+      <circle cx="73" cy="60" r="6" fill="#fff" stroke="#087f82" stroke-width="3"/>
+      <circle cx="93" cy="47" r="6" fill="#fff" stroke="#087f82" stroke-width="3"/>
+      <circle cx="108" cy="30" r="6" fill="#fff" stroke="#087f82" stroke-width="3"/>
+      <circle cx="126" cy="36" r="5" fill="#ed8455"/>
+    </g>
+
+    <g transform="translate(760 226)">
+      <rect width="431" height="63" rx="13" fill="#f8faf9" stroke="#e5eeea"/>
+      <text x="15" y="20" fill="#788681" font-size="9" font-weight="700" letter-spacing="1">RESEARCH PIPELINE</text>
+      <g font-size="10" font-weight="650">
+        <rect x="15" y="30" width="93" height="22" rx="11" fill="#e5f3ee"/><text x="27" y="45" fill="#286b5b">Energy data</text>
+        <path d="M111 41h12m-4-4 4 4-4 4" fill="none" stroke="#98aaa3" stroke-width="1.5"/>
+        <rect x="129" y="30" width="85" height="22" rx="11" fill="#e5f3ee"/><text x="143" y="45" fill="#286b5b">Simulation</text>
+        <path d="M217 41h12m-4-4 4 4-4 4" fill="none" stroke="#98aaa3" stroke-width="1.5"/>
+        <rect x="235" y="30" width="76" height="22" rx="11" fill="#e5f3ee"/><text x="249" y="45" fill="#286b5b">DQN</text>
+        <path d="M314 41h12m-4-4 4 4-4 4" fill="none" stroke="#98aaa3" stroke-width="1.5"/>
+        <rect x="332" y="30" width="84" height="22" rx="11" fill="#fff0e8"/><text x="346" y="45" fill="#a65c3b">Edge · planned</text>
+      </g>
+    </g>
+  </g>
+</svg>
