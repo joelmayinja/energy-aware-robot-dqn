@@ -2,24 +2,24 @@ import time
 import unittest
 from unittest.mock import patch
 
-from src import dashboard
+from src import backend
 
 
 class DashboardServerTests(unittest.TestCase):
     def setUp(self):
-        dashboard.controller.reset()
-        self.pybullet_patch = patch("src.dashboard.pybullet_available", return_value=True)
+        backend.controller.reset()
+        self.pybullet_patch = patch("src.backend.pybullet_available", return_value=True)
         self.pybullet_patch.start()
-        self.client = dashboard.app.test_client()
+        self.client = backend.app.test_client()
 
     def tearDown(self):
-        dashboard.controller.stop()
-        if dashboard.controller.thread is not None:
-            dashboard.controller.thread.join(timeout=2)
+        backend.controller.stop()
+        if backend.controller.thread is not None:
+            backend.controller.thread.join(timeout=2)
         self.pybullet_patch.stop()
 
     def test_snapshot_is_a_detached_copy(self):
-        dashboard.controller._update_step(
+        backend.controller._update_step(
             {
                 "episode": 1,
                 "episode_step": 1,
@@ -27,18 +27,18 @@ class DashboardServerTests(unittest.TestCase):
                 "agent_grid_draw": 0.25,
             }
         )
-        snapshot = dashboard.controller.snapshot()
+        snapshot = backend.controller.snapshot()
         snapshot["series"][0]["agent"] = 99
 
-        self.assertEqual(dashboard.controller.snapshot()["series"][0]["agent"], 0.25)
+        self.assertEqual(backend.controller.snapshot()["series"][0]["agent"], 0.25)
 
     def test_starting_new_run_gets_new_run_id_and_clears_previous_history(self):
-        dashboard.controller._record_episode({"episode": 1})
+        backend.controller._record_episode({"episode": 1})
 
-        with patch("src.dashboard.train", return_value=None):
-            self.assertTrue(dashboard.controller.start(1))
-            dashboard.controller.thread.join(timeout=2)
-        snapshot = dashboard.controller.snapshot()
+        with patch("src.backend.train", return_value=None):
+            self.assertTrue(backend.controller.start(1))
+            backend.controller.thread.join(timeout=2)
+        snapshot = backend.controller.snapshot()
 
         self.assertEqual(snapshot["status"], "completed")
         self.assertEqual(snapshot["run_id"], 1)
@@ -89,7 +89,7 @@ class DashboardServerTests(unittest.TestCase):
         self.assertIn("1 and 500 episodes", response.json["error"])
 
     def test_training_is_blocked_when_pybullet_is_unavailable(self):
-        with patch("src.dashboard.pybullet_available", return_value=False):
+        with patch("src.backend.pybullet_available", return_value=False):
             status = self.client.get("/api/status")
             response = self.client.post("/api/train", json={"episodes": 1})
 
@@ -133,14 +133,14 @@ class DashboardServerTests(unittest.TestCase):
             )
             on_episode({"episode": 1, "reward": 2.0, "grid_energy": 0.5})
 
-        with patch("src.dashboard.train", side_effect=fake_train):
+        with patch("src.backend.train", side_effect=fake_train):
             response = self.client.post("/api/train", json={"episodes": 1})
             self.assertEqual(response.status_code, 202)
 
             deadline = time.monotonic() + 2
-            while time.monotonic() < deadline and dashboard.controller.snapshot()["status"] == "running":
+            while time.monotonic() < deadline and backend.controller.snapshot()["status"] == "running":
                 time.sleep(0.01)
-            dashboard.controller.thread.join(timeout=2)
+            backend.controller.thread.join(timeout=2)
 
         metrics = self.client.get("/api/status").json
         self.assertEqual(metrics["status"], "completed")
@@ -163,7 +163,7 @@ class DashboardServerTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temporary_directory:
             model_path = Path(temporary_directory) / "teacher.pt"
-            with patch("src.dashboard.MODEL_PATH", model_path):
+            with patch("src.backend.MODEL_PATH", model_path):
                 response = self.client.post(
                     "/api/model/upload",
                     data={"model": (model_file, "teacher.pt")},
@@ -199,7 +199,7 @@ class DashboardServerTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temporary_directory:
             model_path = Path(temporary_directory) / "teacher.pt"
-            with patch("src.dashboard.MODEL_PATH", model_path):
+            with patch("src.backend.MODEL_PATH", model_path):
                 response = self.client.post(
                     "/api/model/upload",
                     data={"model": (model_file, "wrong-shape.pt")},
@@ -215,7 +215,7 @@ class DashboardServerTests(unittest.TestCase):
         from tempfile import TemporaryDirectory
 
         with TemporaryDirectory() as temporary_directory:
-            with patch("src.dashboard.MODEL_PATH", Path(temporary_directory) / "missing.pt"):
+            with patch("src.backend.MODEL_PATH", Path(temporary_directory) / "missing.pt"):
                 response = self.client.post(
                     "/api/train", json={"episodes": 1, "resume_model": True}
                 )
@@ -244,13 +244,13 @@ class DashboardServerTests(unittest.TestCase):
             model_path = Path(temporary_directory) / "teacher.pt"
             model_path.touch()
             with (
-                patch("src.dashboard.MODEL_PATH", model_path),
-                patch("src.dashboard.train", side_effect=fake_train),
+                patch("src.backend.MODEL_PATH", model_path),
+                patch("src.backend.train", side_effect=fake_train),
             ):
                 response = self.client.post(
                     "/api/train", json={"episodes": 1, "resume_model": True}
                 )
-                dashboard.controller.thread.join(timeout=2)
+                backend.controller.thread.join(timeout=2)
 
         self.assertEqual(response.status_code, 202)
         self.assertTrue(response.json["resumed_model"])
@@ -268,7 +268,7 @@ class DashboardServerTests(unittest.TestCase):
         ):
             stop_event.wait(timeout=2)
 
-        with patch("src.dashboard.train", side_effect=waiting_train):
+        with patch("src.backend.train", side_effect=waiting_train):
             self.assertEqual(self.client.post("/api/train", json={"episodes": 1}).status_code, 202)
             self.assertEqual(self.client.post("/api/pause").json["status"], "paused")
             self.assertEqual(self.client.post("/api/resume").json["status"], "running")
