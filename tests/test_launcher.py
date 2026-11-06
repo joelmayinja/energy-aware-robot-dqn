@@ -1,6 +1,7 @@
 from http.server import ThreadingHTTPServer
 import threading
 import unittest
+from unittest.mock import MagicMock, patch
 from urllib.request import urlopen
 
 from src import launcher
@@ -44,3 +45,19 @@ class FrontendServerTests(unittest.TestCase):
             server.shutdown()
             server.server_close()
             thread.join(timeout=2)
+
+    def test_launcher_recognizes_the_renamed_frontend_page(self):
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = (
+            b"<title>Wallie | Energy Intelligence</title>"
+        )
+
+        with patch("src.launcher.urlopen", return_value=response):
+            self.assertEqual(launcher._frontend_at_port(), "frontend")
+
+    def test_launcher_does_not_claim_an_unrelated_page(self):
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = b"<title>Other site</title>"
+
+        with patch("src.launcher.urlopen", return_value=response):
+            self.assertEqual(launcher._frontend_at_port(), "occupied")
