@@ -49,7 +49,8 @@ class DashboardServerTests(unittest.TestCase):
         try:
             self.assertEqual(page.status_code, 200)
             self.assertIn(b"Start teacher training", page.data)
-            self.assertIn(b"maximum-speed inverse-kinematics baseline", page.data)
+            self.assertIn(b"fixed-speed baseline", page.data)
+            self.assertIn(b"Upload and validate", page.data)
         finally:
             page.close()
 
@@ -79,7 +80,15 @@ class DashboardServerTests(unittest.TestCase):
         self.assertIn("from 1 to 5", response.json["error"])
 
     def test_training_endpoint_reports_live_metrics_and_completion(self):
-        def fake_train(episodes, stop_event, pause_event, speed_provider, on_step, on_episode):
+        def fake_train(
+            episodes,
+            stop_event,
+            pause_event,
+            speed_provider,
+            on_step,
+            on_episode,
+            resume_model=False,
+        ):
             on_step(
                 {
                     "stage": "baseline",
@@ -114,8 +123,125 @@ class DashboardServerTests(unittest.TestCase):
         self.assertEqual(metrics["series"], [{"step": 1, "agent": 0.25, "baseline": 0.5}])
         self.assertEqual(metrics["history"][0]["grid_energy"], 0.5)
 
+    def test_model_upload_validates_and_saves_teacher_weights(self):
+        import io
+        import tempfile
+        from pathlib import Path
+
+        import torch
+
+        from src.dqn_teacher import DQNAgent
+
+        agent = DQNAgent(state_dim=23, num_joints=6, device="cpu")
+        model_file = io.BytesIO()
+        torch.save(agent.q_network.state_dict(), model_file)
+        model_file.seek(0)
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            model_path = Path(temporary_directory) / "teacher.pt"
+            with patch("src.dashboard.MODEL_PATH", model_path):
+                response = self.client.post(
+                    "/api/model/upload",
+                    data={"model": (model_file, "teacher.pt")},
+                    content_type="multipart/form-data",
+                )
+
+                self.assertEqual(response.status_code, 200, response.json)
+                self.assertTrue(model_path.is_file())
+                self.assertTrue(response.json["model_available"])
+
+    def test_model_upload_rejects_unrecognized_extension(self):
+        import io
+
+        response = self.client.post(
+            "/api/model/upload",
+            data={"model": (io.BytesIO(b"weights"), "teacher.bin")},
+            content_type="multipart/form-data",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(".pt or .pth", response.json["error"])
+
+    def test_model_upload_rejects_incompatible_weights(self):
+        import io
+        import tempfile
+        from pathlib import Path
+
+        import torch
+
+        model_file = io.BytesIO()
+        torch.save({"unexpected": torch.zeros(1)}, model_file)
+        model_file.seek(0)
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            model_path = Path(temporary_directory) / "teacher.pt"
+            with patch("src.dashboard.MODEL_PATH", model_path):
+                response = self.client.post(
+                    "/api/model/upload",
+                    data={"model": (model_file, "wrong-shape.pt")},
+                    content_type="multipart/form-data",
+                )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Invalid teacher weights", response.json["error"])
+        self.assertFalse(model_path.exists())
+
+    def test_training_rejects_resume_without_saved_model(self):
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+
+        with TemporaryDirectory() as temporary_directory:
+            with patch("src.dashboard.MODEL_PATH", Path(temporary_directory) / "missing.pt"):
+                response = self.client.post(
+                    "/api/train", json={"episodes": 1, "resume_model": True}
+                )
+
+        self.assertEqual(response.status_code, 409)
+        self.assertIn("No saved teacher model", response.json["error"])
+
+    def test_training_can_continue_from_a_saved_teacher(self):
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+
+        received_resume_values = []
+
+        def fake_train(
+            episodes,
+            stop_event,
+            pause_event,
+            speed_provider,
+            on_step,
+            on_episode,
+            resume_model=False,
+        ):
+            received_resume_values.append(resume_model)
+
+        with TemporaryDirectory() as temporary_directory:
+            model_path = Path(temporary_directory) / "teacher.pt"
+            model_path.touch()
+            with (
+                patch("src.dashboard.MODEL_PATH", model_path),
+                patch("src.dashboard.train", side_effect=fake_train),
+            ):
+                response = self.client.post(
+                    "/api/train", json={"episodes": 1, "resume_model": True}
+                )
+                dashboard.controller.thread.join(timeout=2)
+
+        self.assertEqual(response.status_code, 202)
+        self.assertTrue(response.json["resumed_model"])
+        self.assertEqual(received_resume_values, [True])
+
     def test_pause_resume_and_stop_are_available_during_training(self):
-        def waiting_train(episodes, stop_event, pause_event, speed_provider, on_step, on_episode):
+        def waiting_train(
+            episodes,
+            stop_event,
+            pause_event,
+            speed_provider,
+            on_step,
+            on_episode,
+            resume_model=False,
+        ):
             stop_event.wait(timeout=2)
 
         with patch("src.dashboard.train", side_effect=waiting_train):
