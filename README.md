@@ -89,25 +89,32 @@ The action values are **joint-velocity commands**, not torque commands. The curr
 │   ├── dataset_prototype.ipynb
 │   └── steel_data.csv
 ├── src/
-│   ├── dashboard.py               # Flask API and local dashboard server
+│   ├── dashboard.py               # Backend Flask API and training controller
 │   ├── dqn_teacher.py             # DQN agent and replay buffer
 │   ├── environment.py             # Gymnasium/PyBullet robot environment
 │   └── training.py                # Baseline and teacher training loop
 ├── tests/
 ├── tinkercad/                     # Arduino sketch and circuit concept
 └── web/
-    ├── assets/                    # Custom dashboard images
-    └── index.html                 # Dashboard interface
+    ├── assets/                    # Frontend images
+    └── index.html                 # Standalone dashboard frontend
 ```
 
 ## Quick start (Windows)
 
-1. Install **Python 3.10** and make sure the Python launcher (`py`) is available. On Windows, PyBullet installation requires **Visual Studio Build Tools** with the **Desktop development with C++** workload (MSVC and a Windows SDK).
-2. Open the `Energy_consumption_DQN` folder and double-click **`start_dashboard.bat`**.
-3. On first run, the launcher creates `.venv310` and installs the project requirements. It opens the dashboard at **http://127.0.0.1:5000** when ready.
-4. Choose **1–3 episodes** for an initial training check. Keep the launcher window open; press **Ctrl+C** there to stop the server.
+1. Install **Python 3.10** and make sure the Python launcher (`py`) is available.
+2. From Git Bash, enter the project folder and run the Windows launcher:
 
-The dashboard always uses `127.0.0.1:5000`. Starting the launcher again opens the existing project dashboard instead of starting another server. If another application owns that port, startup reports the conflict; it does not switch ports. If the launcher reports missing C++ Build Tools, install the workload above and run it again. If Python 3.10 is missing, install Python 3.10 and retry.
+   ```bash
+   cd /c/Users/JOEL/Desktop/DQN/Energy_consumption_DQN
+   cmd.exe /c start_dashboard.bat
+   ```
+
+   You can also double-click `start_dashboard.bat` in File Explorer.
+3. On first run, the launcher creates a small `.venv310` environment and installs Flask only. It starts the frontend and backend separately, then opens **http://127.0.0.1:8000**.
+4. Keep the terminal open while using the dashboard. Press **Ctrl+C** there to stop both local servers.
+
+The frontend is served at `127.0.0.1:8000`; its API runs at `127.0.0.1:5000`. The launcher starts both for you. Neither Codespaces nor Visual Studio Build Tools is needed to view the dashboard. The frontend and backend communicate across these local ports through a restricted CORS configuration.
 
 The dashboard offers:
 
@@ -116,17 +123,19 @@ The dashboard offers:
 - **Data detection** — simulation signals, threshold alerts, and completed episode results.
 - **Model management** — upload a compatible PyTorch teacher `.pt`/`.pth` state dictionary and optionally initialize training from it, along with teacher settings and the student/edge research roadmap.
 
-> Opening `web/index.html` or running Python's static server shows only a page preview. It does **not** provide the Flask API or run training. Training requires PyBullet; the launcher installs it in the project's Python 3.10 environment.
+### Training setup without Visual Studio Build Tools
 
-### Static design preview only (no training)
+The launcher intentionally does **not** install the full training stack. The dashboard can open without PyBullet; training controls report clearly when the simulator is unavailable. The official PyPI PyBullet release does not provide a Windows wheel, so installing it with pip on Windows can require a C++ compiler.
 
-If dependencies are not installed yet, you can preview the HTML layout without training:
+For local Windows training without the Visual Studio C++ workload, install [Miniforge](https://github.com/conda-forge/miniforge) and create the optional prebuilt conda-forge environment from the project folder:
 
-```bash
-python -m http.server 8000 --directory web
+```powershell
+conda env create --prefix .conda-training --file environment-training.yml
 ```
 
-Open **http://127.0.0.1:8000**. The training controls remain disconnected in this mode.
+The launcher automatically uses `.conda-training` when it exists. Then start it the same way as above. The Conda environment is ignored by Git and can be removed later with `conda env remove --prefix .conda-training`.
+
+If you prefer the existing Python 3.10 environment, installing the full `requirements.txt` with pip on Windows may require C++ Build Tools to build PyBullet. On Linux (including Codespaces), PyBullet's published wheel avoids that Windows compiler requirement.
 
 ## Dataset notes
 
@@ -136,10 +145,10 @@ This is **industrial energy-consumption data, not robot telemetry**. It supports
 
 ## Tests
 
-From the project folder:
+For the full test suite, first create the optional training environment described above. Then run from the project folder:
 
 ```bash
-.venv310\Scripts\python.exe -m unittest discover -s tests -v
+.conda-training\python.exe -m unittest discover -s tests -v
 ```
 
 Tests cover dashboard endpoints, DQN action selection, environment behavior, and training updates. A passing test suite does not establish that the agent has learned an effective energy-saving policy.
@@ -150,9 +159,9 @@ Tests cover dashboard endpoints, DQN action selection, environment behavior, and
 2. Press **Ctrl+P** and open `web/index.html`.
 3. Edit the HTML text and navigation, or adjust the CSS in its `<style>` block.
 4. Put your own JPG or PNG in `web/assets/`, then reference it as `/assets/your-image.jpg`.
-5. Refresh the browser. Use the Flask server for live assets/API or the static preview for layout only.
+5. Refresh the browser. The launcher serves frontend files from the static frontend server and sends API requests to the Flask backend.
 
-The Flask app serves custom files from `web/assets/`. The [dashboard source](web/index.html) and [editing notes](README.md#customize-the-dashboard) are in this repository.
+The frontend files are in [web/](web/); the backend API is in [src/dashboard.py](src/dashboard.py). The frontend reads the backend on port 5000.
 
 ## Research and presentation
 

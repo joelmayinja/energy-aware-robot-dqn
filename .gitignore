@@ -8,6 +8,7 @@ venv/
 env/
 .venv/
 .venv*/
+.conda-training/
 
 # Jupyter
 .ipynb_checkpoints/
