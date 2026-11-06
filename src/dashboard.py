@@ -8,14 +8,13 @@ from pathlib import Path
 import tempfile
 from threading import Event, Lock, Thread
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request
 from werkzeug.exceptions import RequestEntityTooLarge
 
-from src.config import HOST, PORT
+from src.config import FRONTEND_ORIGINS, HOST, PORT
 from src.training import train
 
 
-WEB_ROOT = Path(__file__).resolve().parent.parent / "web"
 MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / "teacher.pt"
 MAX_EPISODES_PER_RUN = 500
 MAX_MODEL_UPLOAD_BYTES = 16 * 1024 * 1024
@@ -179,19 +178,30 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = MAX_MODEL_UPLOAD_BYTES
 
 
+@app.after_request
+def allow_frontend_origin(response):
+    origin = request.headers.get("Origin")
+    if origin in FRONTEND_ORIGINS:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        response.headers["Access-Control-Max-Age"] = "600"
+        response.vary.add("Origin")
+    return response
+
+
 @app.errorhandler(RequestEntityTooLarge)
 def upload_too_large(_error):
     return jsonify(error="Model uploads must be 16 MB or smaller."), 413
 
 
 @app.get("/")
-def dashboard_page():
-    return send_from_directory(WEB_ROOT, "index.html")
-
-
-@app.get("/assets/<path:filename>")
-def dashboard_asset(filename):
-    return send_from_directory(WEB_ROOT / "assets", filename)
+def backend_info():
+    return jsonify(
+        application="energy-consumption-dqn",
+        service="api",
+        health=f"http://{HOST}:{PORT}/api/health",
+    )
 
 
 @app.get("/api/status")
@@ -224,7 +234,7 @@ def start_training():
     if resume_model and not MODEL_PATH.is_file():
         return jsonify(error="No saved teacher model is available to continue from."), 409
     if not pybullet_available():
-        return jsonify(error="PyBullet is unavailable. Follow Setup in README.md, then restart the dashboard."), 503
+        return jsonify(error="PyBullet is unavailable. Follow the optional training setup in README.md, then restart the dashboard."), 503
     if not controller.start(episodes, resume_model=resume_model):
         return jsonify(error="A training run is already active."), 409
     return jsonify(

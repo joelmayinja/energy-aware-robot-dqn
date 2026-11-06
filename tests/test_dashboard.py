@@ -44,19 +44,43 @@ class DashboardServerTests(unittest.TestCase):
         self.assertEqual(snapshot["run_id"], 1)
         self.assertEqual(snapshot["history"], [])
 
-    def test_dashboard_and_status_are_served(self):
-        page = self.client.get("/")
-        try:
-            self.assertEqual(page.status_code, 200)
-            self.assertIn(b"Start teacher training", page.data)
-            self.assertIn(b"fixed-speed baseline", page.data)
-            self.assertIn(b"Upload and validate", page.data)
-        finally:
-            page.close()
+    def test_backend_identifies_itself_without_serving_the_frontend(self):
+        response = self.client.get("/")
 
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json["service"], "api")
+        self.assertNotIn(b"Start teacher training", response.data)
         response = self.client.get("/api/status")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json["status"], "idle")
+
+    def test_frontend_origin_can_call_api_and_preflight_posts(self):
+        response = self.client.get(
+            "/api/status", headers={"Origin": "http://127.0.0.1:8000"}
+        )
+
+        self.assertEqual(
+            response.headers["Access-Control-Allow-Origin"],
+            "http://127.0.0.1:8000",
+        )
+
+        preflight = self.client.options(
+            "/api/train",
+            headers={
+                "Origin": "http://localhost:8000",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "Content-Type",
+            },
+        )
+        self.assertEqual(preflight.headers["Access-Control-Allow-Origin"], "http://localhost:8000")
+        self.assertIn("POST", preflight.headers["Access-Control-Allow-Methods"])
+
+    def test_unrecognized_origin_does_not_receive_cors_access(self):
+        response = self.client.get(
+            "/api/status", headers={"Origin": "http://example.com"}
+        )
+
+        self.assertNotIn("Access-Control-Allow-Origin", response.headers)
 
     def test_invalid_training_request_returns_actionable_error(self):
         response = self.client.post("/api/train", json={"episodes": 501})

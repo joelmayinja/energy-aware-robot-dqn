@@ -980,20 +980,22 @@
       }
     }
 
-    const alertMsg = s.error ? [s.error, 'error'] : !s.pybullet_available ? ['PyBullet unavailable. Use start_dashboard.bat to set up the project environment, then restart the dashboard.', 'warning'] : s.agent_grid_draw > 3 ? [`Teacher draw ${fmt(s.agent_grid_draw)} Ws exceeded 3.0 Ws peak threshold.`, 'warning'] : s.status==='running'&&s.stage==='baseline' ? ['Measuring constant-speed controller baseline.',''] : s.status==='running' ? [`Episode ${s.episode}: monitoring energy draw, buffer, and distance.`,''] : last ? [`${done}/${hist.length} tasks completed.`,''] : ['Ready. Start a short training run to collect KUKA simulation metrics.',''];
+    const alertMsg = s.error ? [s.error, 'error'] : !s.pybullet_available ? ['PyBullet is unavailable. The dashboard works, but simulation training needs the optional setup in README.md.', 'warning'] : s.agent_grid_draw > 3 ? [`Teacher draw ${fmt(s.agent_grid_draw)} Ws exceeded 3.0 Ws peak threshold.`, 'warning'] : s.status==='running'&&s.stage==='baseline' ? ['Measuring constant-speed controller baseline.',''] : s.status==='running' ? [`Episode ${s.episode}: monitoring energy draw, buffer, and distance.`,''] : last ? [`${done}/${hist.length} tasks completed.`,''] : ['Ready. Start a short training run to collect KUKA simulation metrics.',''];
     setAlert('alert-box', alertMsg[1], alertMsg[0]);
     setAlert('det-alert', alertMsg[1], alertMsg[0]);
   }
 
   /* ── api ──────────────────────────────────────────────────── */
+  const API_BASE = `${window.location.protocol}//${window.location.hostname}:5000`;
+
   async function api(path, body) {
-    const r = await fetch(path, {
+    const r = await fetch(`${API_BASE}${path}`, {
       method: body===undefined ? 'GET' : 'POST',
       headers: body===undefined ? {} : {'Content-Type':'application/json'},
       body: body===undefined ? undefined : JSON.stringify(body)
     });
     const ct = r.headers.get('content-type') || '';
-    if (!ct.includes('application/json')) throw new Error('Flask dashboard not connected. Start with: start_dashboard.bat');
+    if (!ct.includes('application/json')) throw new Error('Backend API not connected. Start both services with: start_dashboard.bat');
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || `Server returned ${r.status}`);
     return data;
@@ -1010,7 +1012,7 @@
       ['sdot','mon-dot','model-dot'].forEach(id => { if ($(id)) $(id).className = 'dot error'; });
       $('start-btn').disabled = true;
       $('err-msg').hidden = false; $('err-msg').textContent = e.message;
-      for (const id of ['alert-box','det-alert']) setAlert(id, 'warning', 'Static preview. Start Flask dashboard to connect.');
+      for (const id of ['alert-box','det-alert']) setAlert(id, 'warning', 'Frontend is open, but the backend API is not connected.');
       setDelay(5000);
     } finally { polling = false; }
   }
@@ -1044,7 +1046,7 @@
     form.append('model', file);
     $('upload-model-btn').disabled = true;
     try {
-      const response = await fetch('/api/model/upload', {method: 'POST', body: form});
+      const response = await fetch(`${API_BASE}/api/model/upload`, {method: 'POST', body: form});
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || `Server returned ${response.status}`);
       $('model-upload-message').textContent = result.message;
