@@ -89,15 +89,16 @@ The action values are **joint-velocity commands**, not torque commands. The curr
 │   ├── dataset_prototype.ipynb
 │   └── steel_data.csv
 ├── src/
-│   ├── dashboard.py               # Backend Flask API and training controller
+│   ├── backend.py                 # Flask API and training controller
+│   ├── launcher.py                # Starts frontend and backend
 │   ├── dqn_teacher.py             # DQN agent and replay buffer
 │   ├── environment.py             # Gymnasium/PyBullet robot environment
 │   └── training.py                # Baseline and teacher training loop
 ├── tests/
 ├── tinkercad/                     # Arduino sketch and circuit concept
-└── web/
+└── frontend/
     ├── assets/                    # Frontend images
-    └── index.html                 # Standalone dashboard frontend
+    └── web.html                   # Standalone dashboard frontend
 ```
 
 ## Quick start (Windows)
@@ -156,12 +157,12 @@ Tests cover dashboard endpoints, DQN action selection, environment behavior, and
 ## Customize the dashboard
 
 1. Open the repository folder in VS Code.
-2. Press **Ctrl+P** and open `web/index.html`.
+2. Press **Ctrl+P** and open `frontend/web.html`.
 3. Edit the HTML text and navigation, or adjust the CSS in its `<style>` block.
-4. Put your own JPG or PNG in `web/assets/`, then reference it as `/assets/your-image.jpg`.
+4. Put your own JPG or PNG in `frontend/assets/`, then reference it as `/assets/your-image.jpg`.
 5. Refresh the browser. The launcher serves frontend files from the static frontend server and sends API requests to the Flask backend.
 
-The frontend files are in [web/](web/); the backend API is in [src/dashboard.py](src/dashboard.py). The frontend reads the backend on port 5000.
+The frontend files are in [frontend/](frontend/); the backend API is in [src/backend.py](src/backend.py). The launcher is [src/launcher.py](src/launcher.py), and the frontend reads the backend on port 5000.
 
 ## Research and presentation
 
