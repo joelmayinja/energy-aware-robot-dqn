@@ -1,7 +1,6 @@
 """Prepare the lightweight dashboard environment and launch both local services."""
 
 import json
-from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import socket
@@ -21,7 +20,17 @@ from src.config import FRONTEND_PORT, FRONTEND_URL, HOST, PORT, URL
 
 CONDA_PYTHON = PROJECT_ROOT / ".conda-training" / "python.exe"
 VENV_PYTHON = PROJECT_ROOT / ".venv310" / "Scripts" / "python.exe"
-FRONTEND_ROOT = PROJECT_ROOT / "web"
+FRONTEND_ROOT = PROJECT_ROOT / "frontend"
+
+
+class FrontendRequestHandler(SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=str(FRONTEND_ROOT), **kwargs)
+
+    def do_GET(self):
+        if self.path.split("?", 1)[0] == "/":
+            self.path = "/web.html"
+        super().do_GET()
 
 
 def _runtime_python():
@@ -180,17 +189,14 @@ def main():
     try:
         from werkzeug.serving import make_server
 
-        from src.dashboard import app
+        from src.backend import app
 
         if backend_state == "free":
             servers.append(make_server(HOST, PORT, app, threaded=True))
 
         if frontend_state == "free":
-            frontend_handler = partial(
-                SimpleHTTPRequestHandler, directory=str(FRONTEND_ROOT)
-            )
             frontend = ThreadingHTTPServer(
-                (HOST, FRONTEND_PORT), frontend_handler
+                (HOST, FRONTEND_PORT), FrontendRequestHandler
             )
             frontend.daemon_threads = True
             servers.append(frontend)
