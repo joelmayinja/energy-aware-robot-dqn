@@ -96,6 +96,7 @@ def train(
     speed_provider: Callable[[], int],
     on_step: StepCallback,
     on_episode: EpisodeCallback,
+    resume_model: bool = False,
 ) -> None:
     """Train a 256×256 teacher DQN using the project's 500-episode plan."""
     import numpy as np
@@ -114,6 +115,7 @@ def train(
         num_joints=env.action_space.shape[0],
         buffer_capacity=10_000,
     )
+    model_path = PROJECT_ROOT / "models" / "teacher.pt"
     training_history = PROJECT_ROOT / "training_history.csv"
     csv_fields = (
         "episode",
@@ -132,6 +134,8 @@ def train(
     global_step = 0
 
     try:
+        if resume_model:
+            agent.load(model_path)
         for episode in range(1, episodes + 1):
             if stop_event.is_set():
                 break
@@ -258,7 +262,6 @@ def train(
         env.close()
 
     if global_step:
-        model_path = PROJECT_ROOT / "models" / "teacher.pt"
         model_path.parent.mkdir(parents=True, exist_ok=True)
         agent.save(model_path)
         replay_path = PROJECT_ROOT / "data" / "processed" / "teacher_replay.npz"

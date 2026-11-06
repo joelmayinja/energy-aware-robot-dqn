@@ -3,805 +3,1075 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f3f6f5">
-  <title>Wattwise | Energy Intelligence</title>
+  <title>Wallie | Energy Intelligence</title>
   <style>
+    /* ── tokens ──────────────────────────────────────────────────── */
     :root {
-      color-scheme: light;
-      font: 14px/1.5 "Segoe UI", Inter, system-ui, sans-serif;
-      color: #172a2c;
-      background: #f3f6f5;
-      font-synthesis: none;
-      --ink: #172a2c;
-      --muted: #748382;
-      --line: #e6ece9;
-      --paper: #fff;
-      --canvas: #f3f6f5;
-      --teal: #087f82;
-      --teal-dark: #075c61;
-      --teal-soft: #e3f3f0;
-      --orange: #ed8455;
-      --red: #d9594c;
-      --shadow: 0 8px 26px rgb(22 46 41 / 4%);
+      --ink:       #0f2422;
+      --ink2:      #2a3f3c;
+      --muted:     #6b7f7c;
+      --line:      #e4edea;
+      --paper:     #ffffff;
+      --canvas:    #f2f6f4;
+      --teal:      #08807f;
+      --teal-d:    #065f60;
+      --teal-l:    #e0f4f1;
+      --teal-m:    #b3e4de;
+      --orange:    #e97b44;
+      --orange-l:  #fff1e8;
+      --red:       #d44f43;
+      --green:     #20a073;
+      --shadow-s:  0 2px 8px rgba(8,128,127,.07);
+      --shadow-m:  0 6px 22px rgba(8,128,127,.10);
+      --shadow-l:  0 16px 48px rgba(8,128,127,.14);
+      --radius:    13px;
+      --sidebar-w: 240px;
+      font: 13px/1.55 "Inter", "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--canvas);
     }
-    * { box-sizing: border-box; }
-    body { margin: 0; min-width: 320px; min-height: 100vh; }
-    button, input { font: inherit; }
-    button { color: inherit; }
-    .app-shell { display: grid; grid-template-columns: 238px minmax(0, 1fr); min-height: 100vh; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    button, input { font: inherit; color: inherit; }
+    body { min-height: 100vh; overflow-x: hidden; }
+
+    /* ── sidebar ─────────────────────────────────────────────────── */
+    .shell { display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: 100vh; }
     .sidebar {
-      position: sticky; top: 0; display: flex; height: 100vh; flex-direction: column;
-      padding: 26px 17px 18px; border-right: 1px solid var(--line); background: #fff;
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+      display: flex; flex-direction: column;
+      background: var(--paper); border-right: 1px solid var(--line);
+      padding: 22px 14px 18px; gap: 0;
+      transition: transform .3s cubic-bezier(.4,0,.2,1);
     }
-    .brand { display: flex; align-items: center; gap: 11px; padding: 0 10px 29px; }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 4px 8px 24px; }
     .brand-mark {
-      display: grid; width: 38px; height: 38px; place-items: center; border-radius: 12px;
-      background: #e4f4f1; color: var(--teal);
+      width: 38px; height: 38px; border-radius: 11px;
+      background: var(--teal-l); color: var(--teal);
+      display: grid; place-items: center;
+      transition: box-shadow .2s ease;
     }
-    .brand-mark svg { width: 24px; height: 24px; }
-    .brand-name { font-size: 15px; font-weight: 800; letter-spacing: .11em; }
-    .brand-caption { color: var(--muted); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
-    .nav-label { padding: 8px 11px; color: #9aa8a5; font-size: 10px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
-    .nav-list { display: grid; gap: 5px; }
-    .nav-link {
-      display: flex; min-height: 43px; align-items: center; gap: 12px; padding: 0 12px;
-      border: 0; border-radius: 9px; background: transparent; color: #697977; cursor: pointer;
-      text-align: left; transition: background .16s ease, color .16s ease;
+    .brand:hover .brand-mark { box-shadow: 0 0 0 4px var(--teal-m); }
+    .brand-name { font-size: 14px; font-weight: 800; letter-spacing: .09em; }
+    .brand-cap  { font-size: 9px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
+    .nav-section { font-size: 9px; font-weight: 750; color: #9eb0ac; letter-spacing: .13em;
+                   text-transform: uppercase; padding: 6px 10px 5px; margin-top: 4px; }
+    .nav { display: grid; gap: 3px; }
+    .nav-btn {
+      display: flex; align-items: center; gap: 11px; min-height: 42px; padding: 0 12px;
+      border: 0; border-radius: 10px; background: transparent; color: #697d79; cursor: pointer;
+      text-align: left; font-size: 12.5px; font-weight: 500;
+      transition: background .18s ease, color .18s ease, transform .15s ease;
+      position: relative; overflow: hidden;
     }
-    .nav-link:hover { background: #f4f8f6; color: var(--ink); }
-    .nav-link.active { background: var(--teal-soft); color: var(--teal-dark); font-weight: 700; }
-    .nav-icon { display: inline-grid; width: 19px; place-items: center; color: currentColor; font-size: 17px; }
-    .sidebar-spacer { flex: 1; }
-    .project-card { padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #f9fbfa; }
-    .project-card-title { margin: 0 0 7px; font-size: 12px; font-weight: 750; }
-    .project-card p { margin: 0; color: var(--muted); font-size: 11px; }
-    .sidebar-footer { padding: 15px 8px 0; color: #94a19f; font-size: 10px; }
-    .workspace { min-width: 0; padding: 0 36px 38px; }
+    .nav-btn::before {
+      content: ''; position: absolute; inset: 0; border-radius: inherit;
+      background: var(--teal); opacity: 0; transition: opacity .2s ease;
+    }
+    .nav-btn:hover { background: #f1f7f5; color: var(--ink); transform: translateX(2px); }
+    .nav-btn.active { background: var(--teal-l); color: var(--teal-d); font-weight: 700; }
+    .nav-btn.active .nav-ico { color: var(--teal); }
+    .nav-ico { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; transition: transform .2s ease; }
+    .nav-btn:hover .nav-ico { transform: scale(1.15); }
+    .sidebar-spacer { flex: 1; min-height: 20px; }
+    .project-chip {
+      padding: 13px 14px; border: 1px solid var(--line); border-radius: 11px;
+      background: #fafcfb; font-size: 10.5px; color: var(--muted); line-height: 1.55;
+    }
+    .project-chip strong { color: var(--ink); display: block; margin-bottom: 3px; font-size: 11px; }
+    .sidebar-foot { padding: 10px 8px 0; font-size: 9.5px; color: #a0afac; }
+
+    /* ── main workspace ──────────────────────────────────────────── */
+    .workspace { min-width: 0; padding: 0 32px 40px; background: var(--canvas); }
     .topbar {
-      display: flex; min-height: 77px; align-items: center; justify-content: space-between;
-      gap: 16px; border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: space-between;
+      min-height: 72px; border-bottom: 1px solid var(--line); gap: 16px;
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(242,246,244,.85); backdrop-filter: blur(12px);
     }
-    .breadcrumbs { color: var(--muted); font-size: 12px; }
-    .breadcrumbs strong { color: var(--ink); font-weight: 700; }
-    .topbar-right { display: flex; align-items: center; gap: 18px; }
-    .date-label { color: var(--muted); font-size: 12px; }
-    .server-status { display: inline-flex; align-items: center; gap: 8px; color: #50615e; font-size: 12px; }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: #a6b0ae; }
-    .dot.running { background: #24a47c; box-shadow: 0 0 0 3px #24a47c20; }
+    .crumbs { font-size: 11.5px; color: var(--muted); }
+    .crumbs strong { color: var(--ink); font-weight: 700; }
+    .topbar-r { display: flex; align-items: center; gap: 16px; }
+    .date-lbl { font-size: 11px; color: var(--muted); }
+    .srv-status { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; color: #556260; }
+
+    /* live dot */
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #b0bfbc;
+      transition: background .4s ease, box-shadow .4s ease;
+    }
+    .dot.running {
+      background: var(--green);
+      box-shadow: 0 0 0 0 rgba(32,160,115,.5);
+      animation: ripple 1.6s infinite;
+    }
     .dot.error { background: var(--red); }
-    .page-view { display: none; padding-top: 27px; animation: appear .18s ease-out; }
-    .page-view.active { display: block; }
-    @keyframes appear { from { opacity: .55; transform: translateY(3px); } to { opacity: 1; transform: none; } }
-    .page-heading { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 14px; margin-bottom: 20px; }
-    .eyebrow { margin: 0 0 4px; color: var(--teal); font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
-    h1, h2, h3, p { margin-top: 0; }
-    h1 { margin-bottom: 4px; font-size: clamp(22px, 2.4vw, 29px); letter-spacing: -.04em; line-height: 1.2; }
-    h2 { margin-bottom: 5px; font-size: 18px; letter-spacing: -.025em; }
-    h3 { margin-bottom: 0; font-size: 13px; font-weight: 750; }
-    .page-description { margin: 0; color: var(--muted); font-size: 12px; }
-    .button {
-      display: inline-flex; min-height: 38px; align-items: center; justify-content: center; gap: 7px;
-      padding: 0 13px; border: 1px solid #dfe8e4; border-radius: 8px; background: #fff;
-      color: #425451; cursor: pointer; font-size: 11px; font-weight: 700; transition: .15s ease;
+    @keyframes ripple {
+      0%   { box-shadow: 0 0 0 0   rgba(32,160,115,.5); }
+      70%  { box-shadow: 0 0 0 8px rgba(32,160,115,.0); }
+      100% { box-shadow: 0 0 0 0   rgba(32,160,115,.0); }
     }
-    .button:hover:not(:disabled) { border-color: #b6d6cf; background: #f7fbf9; }
-    .button:disabled { cursor: not-allowed; opacity: .48; }
-    .button.primary { border-color: var(--teal); background: var(--teal); color: #fff; }
-    .button.primary:hover:not(:disabled) { border-color: var(--teal-dark); background: var(--teal-dark); }
-    .button.danger { border-color: #f0d7d2; color: #a8463d; }
+
+    /* ── page views ──────────────────────────────────────────────── */
+    .view { display: none; padding-top: 26px; }
+    .view.active {
+      display: block;
+      animation: fadeSlide .25s cubic-bezier(.4,0,.2,1) both;
+    }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: none; }
+    }
+    .pg-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px; margin-bottom: 22px; }
+    .eyebrow { font-size: 9.5px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--teal); margin-bottom: 3px; }
+    h1 { font-size: clamp(22px,2.6vw,30px); font-weight: 800; letter-spacing: -.04em; line-height: 1.15; margin-bottom: 4px; }
+    h2 { font-size: 17px; font-weight: 700; letter-spacing: -.025em; }
+    h3 { font-size: 12.5px; font-weight: 700; }
+    .pg-desc { font-size: 11.5px; color: var(--muted); }
+
+    /* ── buttons ─────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      min-height: 36px; padding: 0 14px; border: 1px solid #dce8e4; border-radius: 8px;
+      background: var(--paper); color: #3f5450; font-size: 11px; font-weight: 700;
+      cursor: pointer; transition: border-color .15s, background .15s, transform .12s, box-shadow .15s;
+    }
+    .btn:hover:not(:disabled) { border-color: #afd4cc; background: #f5faf8; box-shadow: var(--shadow-s); transform: translateY(-1px); }
+    .btn:active:not(:disabled) { transform: translateY(0); box-shadow: none; }
+    .btn:disabled { opacity: .42; cursor: not-allowed; }
+    .btn.primary { background: var(--teal); border-color: var(--teal); color: #fff; box-shadow: 0 2px 10px rgba(8,128,127,.25); }
+    .btn.primary:hover:not(:disabled) { background: var(--teal-d); border-color: var(--teal-d); box-shadow: 0 4px 18px rgba(8,128,127,.35); }
+    .btn.danger  { border-color: #f0d7d2; color: #9a3e37; }
+    .btn.danger:hover:not(:disabled) { background: #fff5f3; }
+
+    /* ── hero ────────────────────────────────────────────────────── */
     .hero {
-      position: relative; display: grid; min-height: 205px; grid-template-columns: minmax(0, 1.1fr) minmax(180px, .75fr);
-      align-items: center; overflow: hidden; padding: 27px 30px; border: 1px solid #d8e9e3;
-      border-radius: 15px; background: linear-gradient(110deg, #e6f4f0 0%, #edf6f3 54%, #f6f8f3 100%);
+      position: relative; overflow: hidden; display: grid;
+      grid-template-columns: minmax(0,1.1fr) minmax(160px,.75fr);
+      align-items: center; min-height: 210px;
+      padding: 28px 32px; border-radius: 16px;
+      border: 1px solid #cce8df;
+      background: linear-gradient(115deg, #dff2ed 0%, #ecf6f2 55%, #f5f8f1 100%);
+      margin-bottom: 18px;
     }
-    .hero-copy { position: relative; z-index: 1; max-width: 500px; }
-    .hero-copy h2 { max-width: 420px; margin: 8px 0; font-size: clamp(21px, 2.7vw, 32px); line-height: 1.15; }
-    .hero-copy p { max-width: 440px; margin-bottom: 16px; color: #637572; font-size: 12px; }
-    .hero-art { position: absolute; right: 0; bottom: -34px; width: min(45%, 430px); height: 250px; opacity: .86; }
-    .hero-art .haze { fill: #d6ebe5; }
-    .hero-art .tower { stroke: #67a9a0; stroke-width: 7; stroke-linecap: round; fill: none; }
-    .hero-art .blade { stroke: #267c7c; stroke-width: 7; stroke-linecap: round; fill: none; }
-    .hero-art .hub { fill: #ed8455; }
-    .hero-art .ground { stroke: #b8d7ce; stroke-width: 2; }
-    .hero-art .small-turbine { opacity: .55; }
-    .pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: 20px; background: #fff; color: var(--teal-dark); font-size: 10px; font-weight: 750; }
-    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
-    .metric, .panel, .phase-card { min-width: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); box-shadow: var(--shadow); }
-    .metric { padding: 15px; }
-    .metric-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .label { color: var(--muted); font-size: 10px; font-weight: 650; }
-    .metric-icon { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 8px; background: #edf6f2; color: var(--teal); font-size: 14px; }
-    .metric-icon.orange { background: #fff1e9; color: #d7774c; }
-    .value { margin-top: 8px; color: var(--ink); font-size: 23px; font-weight: 780; letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
-    .unit { margin-top: 3px; color: #899592; font-size: 10px; }
-    .track, .gauge { height: 5px; margin-top: 9px; overflow: hidden; border-radius: 9px; background: #edf1ef; }
-    .fill, .gauge-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #087f82, #55b69d); transition: width .2s ease; }
-    .gauge-fill { background: linear-gradient(90deg, #edaa62, #29a583); }
-    .content-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(260px, .85fr); gap: 13px; margin-top: 13px; }
-    .content-grid.equal { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .panel { padding: 17px; }
-    .panel-title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 11px; }
-    .panel-subtitle { margin: 3px 0 0; color: var(--muted); font-size: 10px; }
+    .hero::after {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse 60% 80% at 100% 110%, rgba(8,128,127,.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-copy { position: relative; z-index: 1; }
+    .hero-copy h2 { font-size: clamp(20px,2.8vw,32px); line-height: 1.15; margin: 10px 0; max-width: 420px; }
+    .hero-copy p { font-size: 11.5px; color: #5f7571; margin-bottom: 16px; max-width: 440px; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px;
+      border-radius: 20px; background: rgba(255,255,255,.8); backdrop-filter: blur(6px);
+      color: var(--teal-d); font-size: 10px; font-weight: 750;
+      border: 1px solid rgba(8,128,127,.15);
+    }
+    /* animated turbine */
+    .hero-art { position: absolute; right: 0; bottom: -30px; width: min(44%,420px); height: 250px; }
+    .turbine-blade { transform-origin: 285px 65px; animation: spin 5s linear infinite; }
+    .turbine-blade-sm { transform-origin: 145px 97px; animation: spin 7s linear infinite; }
+    .turbine-blade-xs { transform-origin: 370px 116px; animation: spin 4s linear infinite reverse; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    /* ── metric cards ────────────────────────────────────────────── */
+    .metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; margin-bottom: 14px; }
+    .metric {
+      padding: 16px; border: 1px solid var(--line); border-radius: var(--radius);
+      background: var(--paper); box-shadow: var(--shadow-s);
+      transition: transform .2s ease, box-shadow .2s ease;
+      animation: cardIn .35s cubic-bezier(.4,0,.2,1) both;
+    }
+    .metric:hover { transform: translateY(-3px); box-shadow: var(--shadow-m); }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: none; }
+    }
+    .metric:nth-child(1) { animation-delay: .04s; }
+    .metric:nth-child(2) { animation-delay: .08s; }
+    .metric:nth-child(3) { animation-delay: .12s; }
+    .metric:nth-child(4) { animation-delay: .16s; }
+    .metric-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .mlabel { font-size: 9.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .mico { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center;
+            background: var(--teal-l); color: var(--teal); font-size: 13px; }
+    .mico.orange { background: var(--orange-l); color: var(--orange); }
+    .mval {
+      font-size: 24px; font-weight: 800; letter-spacing: -.05em; color: var(--ink);
+      font-variant-numeric: tabular-nums;
+      transition: color .3s ease;
+    }
+    .munit { font-size: 9.5px; color: #8fa09d; margin-top: 3px; }
+    .mtrack { height: 4px; border-radius: 4px; background: #edf1ef; margin-top: 10px; overflow: hidden; }
+    .mfill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--teal), #55b89e); transition: width .5s cubic-bezier(.4,0,.2,1); }
+    .mgauge { height: 4px; border-radius: 4px; background: #edf1ef; margin-top: 10px; overflow: hidden; }
+    .mgaugefill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #e9a855, var(--green)); transition: width .5s cubic-bezier(.4,0,.2,1); }
+
+    /* ── panels ──────────────────────────────────────────────────── */
+    .grid2 { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(240px,.85fr); gap: 13px; margin-bottom: 14px; }
+    .grid2.eq { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .panel {
+      border: 1px solid var(--line); border-radius: var(--radius);
+      background: var(--paper); padding: 18px;
+      box-shadow: var(--shadow-s);
+      transition: box-shadow .2s ease;
+    }
+    .panel:hover { box-shadow: var(--shadow-m); }
+    .panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 13px; }
+    .panel-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
     canvas { display: block; width: 100%; height: 220px; }
     #robot-canvas { height: 242px; }
-    .legend { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 10px; }
+    .legend { display: flex; gap: 12px; font-size: 10px; color: var(--muted); }
     .legend span { display: inline-flex; align-items: center; gap: 5px; }
-    .legend i { width: 7px; height: 7px; border-radius: 50%; background: var(--orange); }
-    .legend .teal-dot { background: var(--teal); }
-    .alert {
-      display: flex; align-items: start; gap: 10px; padding: 12px; border: 1px solid #e1efea;
-      border-radius: 9px; background: #f4faf7; color: #536661; font-size: 11px;
+    .leg-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+    /* ── status rows ─────────────────────────────────────────────── */
+    .slist { margin-top: 10px; }
+    .srow {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 9px 0; border-bottom: 1px solid #eff3f0; font-size: 11px;
+      transition: background .15s ease;
     }
-    .alert.warning { border-color: #f3dfc5; background: #fff9f0; color: #805c37; }
-    .alert.error { border-color: #f0d3ce; background: #fff5f3; color: #a8463d; }
-    .alert-icon { color: var(--teal); font-size: 15px; }
-    .alert.warning .alert-icon { color: #d58334; }
-    .alert.error .alert-icon { color: var(--red); }
-    .status-list { display: grid; gap: 0; margin-top: 9px; }
-    .status-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid #eff2f0; font-size: 11px; }
-    .status-row:last-child { border-bottom: 0; }
-    .status-row span:first-child { color: #71807d; }
-    .status-value { display: inline-flex; align-items: center; gap: 6px; color: #344845; font-weight: 700; }
-    .status-value .dot { width: 6px; height: 6px; background: #32a482; }
-    .table-wrap { overflow-x: auto; }
-    .table { width: 100%; border-collapse: collapse; font-size: 11px; }
-    .table th, .table td { padding: 10px 8px; border-bottom: 1px solid #edf1ef; text-align: left; white-space: nowrap; }
-    .table th { color: #82908d; font-size: 9px; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
-    .table td { color: #50615e; }
-    .table td:last-child, .table th:last-child { text-align: right; }
-    .table td.metric-cell { color: var(--teal-dark); font-weight: 700; }
-    .tag { display: inline-flex; padding: 3px 7px; border-radius: 12px; background: #eaf5f0; color: #28785f; font-size: 9px; font-weight: 750; }
-    .tag.warning { background: #fff2df; color: #a96922; }
-    .history { max-height: 270px; overflow: auto; margin: 0; padding-left: 18px; color: #677773; font-size: 10px; }
-    .history li { padding: 7px 0; border-bottom: 1px solid #eff2f0; }
-    .controls { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin-top: 14px; }
-    label { display: grid; gap: 5px; color: #6d7c78; font-size: 10px; font-weight: 650; }
-    input[type="number"] { width: 104px; min-height: 38px; padding: 0 10px; border: 1px solid #dfe8e4; border-radius: 8px; background: #fff; color: var(--ink); }
+    .srow:last-child { border-bottom: 0; }
+    .srow:hover { background: #fafcfb; border-radius: 6px; padding-left: 6px; padding-right: 6px; }
+    .srow .sk { color: #6e7f7b; }
+    .sval { display: inline-flex; align-items: center; gap: 6px; color: #2e4440; font-weight: 700; }
+
+    /* ── alert ───────────────────────────────────────────────────── */
+    .alert {
+      display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;
+      border: 1px solid #d4ebe5; border-radius: 9px; background: #f2faf7;
+      color: #4a6360; font-size: 11px; line-height: 1.5;
+      transition: background .3s ease, border-color .3s ease;
+    }
+    .alert.warning { border-color: #f3dfbf; background: #fffbf0; color: #7a5528; }
+    .alert.error   { border-color: #f0cdc9; background: #fff5f3; color: #9a3530; }
+    .alert-ico { font-size: 14px; flex-shrink: 0; }
+
+    /* ── table ───────────────────────────────────────────────────── */
+    .twrap { overflow-x: auto; }
+    .tbl { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+    .tbl th, .tbl td { padding: 10px 8px; border-bottom: 1px solid #edf1ef; text-align: left; white-space: nowrap; }
+    .tbl th { font-size: 9px; font-weight: 750; color: #82918d; text-transform: uppercase; letter-spacing: .06em; }
+    .tbl td { color: #4d5f5b; }
+    .tbl td:last-child, .tbl th:last-child { text-align: right; }
+    .tbl tbody tr { transition: background .15s ease; }
+    .tbl tbody tr:hover { background: #f8fbf9; }
+    .tbl td.hi { color: var(--teal-d); font-weight: 700; }
+    .tag { display: inline-flex; padding: 2px 7px; border-radius: 10px; background: #e5f4ee; color: #1f7a57; font-size: 9px; font-weight: 750; }
+    .tag.warn { background: #fff2df; color: #a06522; }
+
+    /* ── controls ────────────────────────────────────────────────── */
+    .controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-top: 14px; }
+    label { display: grid; gap: 5px; font-size: 9.5px; font-weight: 700; color: #657672; letter-spacing: .03em; }
+    input[type="number"] { width: 104px; min-height: 36px; padding: 0 10px; border: 1px solid #dce8e4; border-radius: 8px; background: var(--paper); transition: border-color .15s, box-shadow .15s; }
+    input[type="number"]:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(8,128,127,.12); }
     input[type="range"] { width: 120px; accent-color: var(--teal); }
-    .speed-value { color: var(--teal-dark); font-size: 10px; font-weight: 750; }
-    .error-message { margin: 12px 0 0; padding: 10px 12px; border: 1px solid #f0d3ce; border-radius: 8px; background: #fff5f3; color: #a8463d; font-size: 11px; }
-    .error-message[hidden] { display: none; }
-    .phase-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-    .phase-card { padding: 17px; }
-    .phase-card.active { border-color: #a9d8cb; background: #f2faf7; }
-    .phase-number { color: var(--teal); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-    .phase-card h3 { margin: 8px 0 4px; font-size: 13px; }
-    .phase-card p { margin: 0; color: var(--muted); font-size: 10px; }
-    .config-table td:first-child { color: #74827f; }
-    .config-table td:last-child { color: var(--ink); font-weight: 650; text-align: right; }
-    .section-note { margin: 13px 0 0; color: #8b9694; font-size: 10px; line-height: 1.6; }
-    .empty-note { color: #98a4a1; font-size: 11px; }
-    @media (max-width: 1050px) {
-      .app-shell { grid-template-columns: 205px minmax(0, 1fr); }
-      .workspace { padding-right: 22px; padding-left: 22px; }
-      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .speed-val { color: var(--teal-d); font-size: 10px; font-weight: 750; }
+    .err-msg { margin: 10px 0 0; padding: 10px 12px; border: 1px solid #f0d3ce; border-radius: 8px; background: #fff5f3; color: #a03530; font-size: 11px; animation: fadeSlide .2s ease; }
+    .err-msg[hidden] { display: none; }
+    .note { margin-top: 12px; font-size: 10px; color: #8fa09d; line-height: 1.65; }
+
+    /* ── phases ──────────────────────────────────────────────────── */
+    .phase-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin-bottom: 14px; }
+    .phase-card {
+      padding: 18px; border: 1px solid var(--line); border-radius: var(--radius);
+      background: var(--paper); box-shadow: var(--shadow-s);
+      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .phase-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-m); }
+    .phase-card.active { border-color: #9ed3c8; background: linear-gradient(135deg, #f0fbf8, #f8fdfc); }
+    .phase-num { font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--teal); }
+    .phase-card h3 { margin: 8px 0 4px; font-size: 13.5px; }
+    .phase-card p { font-size: 10px; color: var(--muted); }
+    .phase-badge {
+      display: inline-flex; align-items: center; padding: 3px 9px;
+      border-radius: 20px; font-size: 9px; font-weight: 750;
+    }
+    .phase-badge.p0 { background: var(--teal-l); color: var(--teal-d); }
+    .phase-badge.p1 { background: var(--orange-l); color: #c4632a; }
+
+    /* ── history list ────────────────────────────────────────────── */
+    .hist { max-height: 275px; overflow-y: auto; list-style: none; padding: 0; }
+    .hist li { padding: 8px 0; border-bottom: 1px solid #eff3f0; font-size: 10px; color: #607370; animation: fadeSlide .2s ease; }
+    .hist li:last-child { border-bottom: 0; }
+    .empty-note { font-size: 11px; color: #98a7a4; }
+
+    /* ── toast ───────────────────────────────────────────────────── */
+    #toast-container { position: fixed; bottom: 22px; right: 22px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+    .toast {
+      display: flex; align-items: center; gap: 10px; padding: 11px 16px;
+      border-radius: 10px; background: var(--ink2); color: #fff; font-size: 11px; font-weight: 600;
+      box-shadow: 0 6px 24px rgba(0,0,0,.2);
+      animation: toastIn .25s cubic-bezier(.4,0,.2,1) both;
+      pointer-events: auto;
+    }
+    .toast.success { background: #14574a; }
+    .toast.warn    { background: #704a1a; }
+    .toast.error   { background: #6e2424; }
+    @keyframes toastIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+    @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateX(24px); } }
+
+    /* ── responsive ──────────────────────────────────────────────── */
+    @media (max-width: 1060px) {
+      .shell { grid-template-columns: 200px 1fr; }
+      .workspace { padding-right: 20px; padding-left: 20px; }
+      .metrics { grid-template-columns: repeat(2,1fr); }
     }
     @media (max-width: 760px) {
-      .app-shell { display: block; }
-      .sidebar { position: static; width: 100%; height: auto; padding: 12px 14px 9px; border-right: 0; border-bottom: 1px solid var(--line); }
-      .brand { padding: 0 4px 10px; }
-      .nav-label, .sidebar-spacer, .project-card, .sidebar-footer { display: none; }
-      .nav-list { display: flex; overflow-x: auto; gap: 5px; padding-bottom: 2px; scrollbar-width: none; }
-      .nav-list::-webkit-scrollbar { display: none; }
-      .nav-link { min-height: 37px; flex: 0 0 auto; gap: 7px; padding: 0 10px; font-size: 11px; }
-      .nav-icon { font-size: 14px; }
-      .workspace { padding: 0 15px 25px; }
-      .topbar { min-height: 56px; }
-      .date-label { display: none; }
-      .page-view { padding-top: 21px; }
-      .hero { min-height: 220px; grid-template-columns: 1fr; padding: 22px; }
-      .hero-art { right: -24px; bottom: -60px; width: 66%; opacity: .38; }
-      .content-grid, .content-grid.equal { grid-template-columns: 1fr; }
+      .shell { display: block; }
+      .sidebar { position: static; height: auto; flex-direction: row; flex-wrap: wrap; padding: 10px 12px 8px; }
+      .brand { padding-bottom: 8px; margin-right: 16px; }
+      .nav-section, .sidebar-spacer, .project-chip, .sidebar-foot { display: none; }
+      .nav { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; }
+      .nav::-webkit-scrollbar { display: none; }
+      .nav-btn { flex: 0 0 auto; min-height: 36px; font-size: 11px; padding: 0 11px; }
+      .workspace { padding: 0 14px 28px; }
+      .topbar { min-height: 52px; }
+      .date-lbl { display: none; }
+      .grid2, .grid2.eq { grid-template-columns: 1fr; }
       .phase-grid { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 460px) {
-      .metrics { gap: 8px; }
-      .metric { padding: 12px; }
-      .value { font-size: 19px; }
-      .workspace { padding-right: 11px; padding-left: 11px; }
-      .topbar-right { gap: 9px; }
-      .server-status { font-size: 10px; }
-      .controls { align-items: stretch; }
-      .controls .button { flex: 1 1 42%; }
-      .hero-copy h2 { font-size: 24px; }
+      .hero { grid-template-columns: 1fr; }
+      .hero-art { right: -20px; bottom: -50px; opacity: .3; width: 65%; }
     }
   </style>
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <span class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 32 32" fill="none">
-            <path d="M16 5v17M16 10 7 6M16 10l9-5M16 10l1 11" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
-            <circle cx="16" cy="10" r="2.6" fill="#ed8455"/>
-            <path d="M9 26h15M13 22h7l3 4H10l3-4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-          </svg>
+<div id="toast-container"></div>
+
+<div class="shell">
+  <!-- ── sidebar ──────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">
+        <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+          <path d="M16 5v17M16 10 7 6M16 10l9-5M16 10l1 11" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+          <circle cx="16" cy="10" r="2.6" fill="#e97b44"/>
+          <path d="M9 26h15M13 22h7l3 4H10l3-4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <span><div class="brand-name">WATTWISE</div><div class="brand-cap">Energy intelligence</div></span>
+    </div>
+    <div class="nav-section">Workspace</div>
+    <nav class="nav">
+      <button class="nav-btn active" data-view="overview" aria-current="page">
+        <span class="nav-ico">⌂</span>Overview
+      </button>
+      <button class="nav-btn" data-view="monitoring">
+        <span class="nav-ico">◉</span>Live monitoring
+      </button>
+      <button class="nav-btn" data-view="detection">
+        <span class="nav-ico">⌁</span>Data detection
+      </button>
+      <button class="nav-btn" data-view="management">
+        <span class="nav-ico">⚙</span>Model management
+      </button>
+    </nav>
+    <div class="sidebar-spacer"></div>
+    <div class="project-chip">
+      <strong>Research prototype</strong>
+      Energy-aware robot control via lightweight Deep Q-Network.
+    </div>
+    <div class="sidebar-foot">KUKA iiwa · Local simulation</div>
+  </aside>
+
+  <!-- ── workspace ─────────────────────────────────────── -->
+  <main class="workspace">
+    <header class="topbar">
+      <div class="crumbs">Workspace / <strong id="crumb">Overview</strong></div>
+      <div class="topbar-r">
+        <span class="date-lbl">Uganda Christian University · Research dashboard</span>
+        <span class="srv-status">
+          <span class="dot" id="sdot"></span>
+          <span id="stxt">Connecting…</span>
         </span>
-        <span><span class="brand-name">WATTWISE</span><br><span class="brand-caption">Energy intelligence</span></span>
       </div>
-      <div class="nav-label">Workspace</div>
-      <nav class="nav-list" aria-label="Main navigation">
-        <button class="nav-link active" type="button" data-view-target="overview" aria-current="page"><span class="nav-icon">⌂</span>Overview</button>
-        <button class="nav-link" type="button" data-view-target="monitoring"><span class="nav-icon">◉</span>Live monitoring</button>
-        <button class="nav-link" type="button" data-view-target="detection"><span class="nav-icon">⌁</span>Data detection</button>
-        <button class="nav-link" type="button" data-view-target="management"><span class="nav-icon">⚙</span>Model management</button>
-      </nav>
-      <div class="sidebar-spacer"></div>
-      <div class="project-card">
-        <p class="project-card-title">Research prototype</p>
-        <p>Energy-aware robot control powered by a lightweight Deep Q-Network.</p>
+    </header>
+
+    <!-- ── OVERVIEW ──────────────────────────────────── -->
+    <section class="view active" id="view-overview" data-title="Overview">
+      <div class="pg-head">
+        <div>
+          <div class="eyebrow">Good to see you, Joel</div>
+          <h1>Energy overview</h1>
+          <p class="pg-desc">A clear view of your robot simulation and its energy performance.</p>
+        </div>
+        <button class="btn primary" data-go="monitoring">＋ Open live monitor</button>
       </div>
-      <div class="sidebar-footer">KUKA iiwa · Local simulation</div>
-    </aside>
 
-    <main class="workspace">
-      <header class="topbar">
-        <div class="breadcrumbs">Workspace <span aria-hidden="true">/</span> <strong id="breadcrumb-current">Overview</strong></div>
-        <div class="topbar-right">
-          <span class="date-label">Uganda Christian University · Research dashboard</span>
-          <span class="server-status" role="status" aria-live="polite"><span class="dot" id="status-dot"></span><span id="status-text">Connecting to simulation…</span></span>
+      <!-- hero -->
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="pill"><span class="dot running"></span> Intelligent energy monitoring</div>
+          <h2>Make every movement count.</h2>
+          <p>Train an energy-aware robot controller and compare its live grid draw with a fixed-speed baseline in a simulated KUKA environment.</p>
+          <button class="btn" data-go="management">Explore your model →</button>
         </div>
-      </header>
-
-      <section class="page-view active" id="view-overview" data-title="Overview" aria-labelledby="overview-title">
-        <div class="page-heading">
-          <div><p class="eyebrow">Good to see you, Joel</p><h1 id="overview-title">Energy overview</h1><p class="page-description">A clear view of your robot simulation and its energy performance.</p></div>
-          <button class="button primary" type="button" data-go-view="monitoring">＋ <span>Open live monitor</span></button>
-        </div>
-
-        <section class="hero" aria-label="Project introduction">
-          <div class="hero-copy">
-            <span class="pill"><span class="dot running"></span> Intelligent energy monitoring</span>
-            <h2>Make every movement count.</h2>
-            <p>Train an energy-aware robot controller and compare its live grid draw with a fixed-speed baseline in a simulated KUKA environment.</p>
-            <button class="button" type="button" data-go-view="management">Explore your model <span aria-hidden="true">→</span></button>
-          </div>
-          <svg class="hero-art" viewBox="0 0 460 260" role="img" aria-label="Illustration of wind turbines generating clean energy">
-            <ellipse class="haze" cx="265" cy="218" rx="190" ry="25"/>
-            <path class="ground" d="M58 226c83-15 209-19 347-2"/>
-            <g class="small-turbine" transform="translate(145 97) scale(.62)">
-              <path class="tower" d="M0 0 8 130"/><circle class="hub" r="7"/>
-              <path class="blade" d="M0 0-5-67M0 0 56 33M0 0-57 32"/>
+        <svg class="hero-art" viewBox="0 0 460 260" fill="none" aria-hidden="true">
+          <ellipse cx="265" cy="218" rx="190" ry="25" fill="#d0e9e2"/>
+          <path d="M58 226c83-15 209-19 347-2" stroke="#b0d3c8" stroke-width="2"/>
+          <!-- small left turbine -->
+          <g transform="translate(145 97) scale(.62)">
+            <path d="M0 0 8 130" stroke="#67a9a0" stroke-width="7" stroke-linecap="round"/>
+            <circle r="7" fill="#ed8455"/>
+            <g class="turbine-blade-sm">
+              <path d="M0 0-5-67M0 0 56 33M0 0-57 32" stroke="#267c7c" stroke-width="7" stroke-linecap="round"/>
             </g>
-            <g transform="translate(285 65)">
-              <path class="tower" d="M0 0 14 164"/><circle class="hub" r="9"/>
-              <path class="blade" d="M0 0-8-83M0 0 72 42M0 0-72 41"/>
+          </g>
+          <!-- main turbine -->
+          <g transform="translate(285 65)">
+            <path d="M0 0 14 164" stroke="#67a9a0" stroke-width="7" stroke-linecap="round"/>
+            <circle r="9" fill="#ed8455"/>
+            <g class="turbine-blade">
+              <path d="M0 0-8-83M0 0 72 42M0 0-72 41" stroke="#267c7c" stroke-width="7" stroke-linecap="round"/>
             </g>
-            <g class="small-turbine" transform="translate(370 116) scale(.5)">
-              <path class="tower" d="M0 0 8 130"/><circle class="hub" r="7"/>
-              <path class="blade" d="M0 0-5-67M0 0 56 33M0 0-57 32"/>
+          </g>
+          <!-- small right turbine -->
+          <g transform="translate(370 116) scale(.5)" style="opacity:.55">
+            <path d="M0 0 8 130" stroke="#67a9a0" stroke-width="7" stroke-linecap="round"/>
+            <circle r="7" fill="#ed8455"/>
+            <g class="turbine-blade-xs">
+              <path d="M0 0-5-67M0 0 56 33M0 0-57 32" stroke="#267c7c" stroke-width="7" stroke-linecap="round"/>
             </g>
-          </svg>
-        </section>
-
-        <section class="metrics" aria-label="Key training metrics">
-          <article class="metric"><div class="metric-top"><span class="label">Training progress</span><span class="metric-icon">▤</span></div><div class="value" id="episode-value">0 / 0</div><div class="unit" id="step-value">0 / 400 simulation steps</div><div class="track"><div class="fill" id="episode-progress"></div></div></article>
-          <article class="metric"><div class="metric-top"><span class="label">Latest grid draw</span><span class="metric-icon orange">ϟ</span></div><div class="value" id="grid-value">—</div><div class="unit">Teacher / baseline · Ws per step</div></article>
-          <article class="metric"><div class="metric-top"><span class="label">Peak reduction</span><span class="metric-icon">↘</span></div><div class="value" id="peak-value">—</div><div class="unit">Teacher compared with baseline</div></article>
-          <article class="metric"><div class="metric-top"><span class="label">Task completion</span><span class="metric-icon">✓</span></div><div class="value" id="completion-value">—</div><div class="unit">Completed targets across episodes</div></article>
-        </section>
-
-        <div class="content-grid">
-          <article class="panel">
-            <div class="panel-title"><div><h3>Grid performance</h3><p class="panel-subtitle">Step-by-step energy draw in the current episode</p></div><div class="legend"><span><i class="teal-dot"></i>Teacher DQN</span><span><i></i>Baseline</span></div></div>
-            <canvas id="grid-chart" aria-label="Live grid draw comparison against a constant-speed baseline"></canvas>
-          </article>
-          <article class="panel">
-            <div class="panel-title"><div><h3>Simulation health</h3><p class="panel-subtitle">Your model and environment at a glance</p></div><span class="metric-icon">◉</span></div>
-            <p id="alert-box" class="alert" aria-live="polite"><span class="alert-icon">✓</span><span>Ready. Start a short training run to collect simulation metrics.</span></p>
-            <div class="status-list">
-              <div class="status-row"><span>Model status</span><span class="status-value"><span class="dot"></span><span id="model-status">Waiting to train</span></span></div>
-              <div class="status-row"><span>Energy buffer</span><span class="status-value" id="buffer-value">—</span></div>
-              <div class="status-row"><span>Current phase</span><span class="status-value" id="phase-value">Waiting for simulation…</span></div>
-              <div class="status-row"><span>Target distance</span><span class="status-value" id="distance-value">—</span></div>
-            </div>
-          </article>
-        </div>
-        <div class="content-grid equal">
-          <article class="panel">
-            <div class="panel-title"><div><h3>Episode energy comparison</h3><p class="panel-subtitle">Total grid energy · lower is better</p></div><span class="tag">Simulation</span></div>
-            <canvas id="episode-chart" aria-label="Episode grid energy compared with the fixed-speed baseline"></canvas>
-          </article>
-          <article class="panel">
-            <div class="panel-title"><div><h3>Experiment snapshot</h3><p class="panel-subtitle">Current teacher model signals</p></div></div>
-            <div class="status-list">
-              <div class="status-row"><span>Episode reward</span><span class="status-value" id="reward-value">—</span></div>
-              <div class="status-row"><span>Exploration rate (ε)</span><span class="status-value" id="epsilon-value">—</span></div>
-              <div class="status-row"><span>Latest learning loss</span><span class="status-value" id="loss-value">Available after 64 experiences</span></div>
-              <div class="status-row"><span>Current threshold</span><span class="status-value">3.0 Ws / step</span></div>
-            </div>
-            <p class="section-note">The dashboard reports simulated values; it is not connected to physical robot hardware.</p>
-          </article>
-        </div>
+          </g>
+        </svg>
       </section>
 
-      <section class="page-view" id="view-monitoring" data-title="Live monitoring" aria-labelledby="monitoring-title">
-        <div class="page-heading">
-          <div><p class="eyebrow">Simulation control room</p><h1 id="monitoring-title">Live monitoring</h1><p class="page-description">Watch the KUKA simulation, tune playback, and control your training run.</p></div>
-          <span class="pill"><span class="dot" id="monitor-dot"></span><span id="monitor-status">Waiting for connection</span></span>
-        </div>
-        <div class="panel">
-          <div class="panel-title"><div><h3>Teacher training controls</h3><p class="panel-subtitle">Start with a short run to check the workflow.</p></div></div>
-          <div class="controls" aria-label="Teacher training controls">
-            <label for="episode-count">Episodes (1–500)<input id="episode-count" type="number" min="1" max="500" value="3"></label>
-            <button id="start-button" class="button primary" type="button">▶ Start teacher training</button>
-            <button id="pause-button" class="button" type="button" disabled>Ⅱ Pause</button>
-            <button id="stop-button" class="button danger" type="button" disabled>■ Stop run</button>
-            <label for="speed-control">Playback speed <span class="speed-value"><span id="speed-value">3</span> / 5</span><input id="speed-control" type="range" min="1" max="5" value="3"></label>
-            <button id="reset-button" class="button" type="button">Clear results</button>
-            <button id="export-button" class="button" type="button">↓ Export CSV</button>
-          </div>
-          <p class="section-note">Playback speed changes how quickly updates are shown; it does not change PyBullet physics.</p>
-          <p id="error-message" class="error-message" role="alert" hidden></p>
-        </div>
-        <div class="metrics">
-          <article class="metric"><div class="metric-top"><span class="label">Episode reward</span><span class="metric-icon">✦</span></div><div class="value" id="monitor-reward">—</div><div class="unit">Higher is better</div></article>
-          <article class="metric"><div class="metric-top"><span class="label">Energy buffer</span><span class="metric-icon orange">ϟ</span></div><div class="value" id="monitor-buffer">—</div><div class="gauge"><div class="gauge-fill" id="buffer-progress"></div></div><div class="unit">50 Ws capacity · 80% charge efficiency</div></article>
-          <article class="metric"><div class="metric-top"><span class="label">Target distance</span><span class="metric-icon">⌖</span></div><div class="value" id="monitor-distance">—</div><div class="unit">Distance to current task target</div></article>
-          <article class="metric"><div class="metric-top"><span class="label">Learning loss</span><span class="metric-icon">⌁</span></div><div class="value" id="monitor-loss">—</div><div class="unit">Q-value prediction error</div></article>
-        </div>
-        <div class="content-grid">
-          <article class="panel">
-            <div class="panel-title"><div><h3>Live energy draw</h3><p class="panel-subtitle">Teacher DQN against maximum-speed inverse-kinematics baseline</p></div><span class="tag">Peak limit 3.0 Ws</span></div>
-            <canvas id="grid-chart-monitor" aria-label="Live energy draw during the simulation"></canvas>
-          </article>
-          <article class="panel">
-            <div class="panel-title"><div><h3>KUKA iiwa arm pose</h3><p class="panel-subtitle">A schematic driven by the simulated joint angles</p></div><span class="tag">6 active joints</span></div>
-            <canvas id="robot-canvas" aria-label="Schematic KUKA arm pose using simulated joint angles"></canvas>
-            <p class="section-note" id="robot-caption">Joint angle schematic · final wrist joint locked.</p>
-          </article>
-        </div>
-      </section>
+      <!-- metrics -->
+      <div class="metrics">
+        <article class="metric">
+          <div class="metric-top"><span class="mlabel">Training progress</span><span class="mico">▤</span></div>
+          <div class="mval" id="ep-val">0 / 0</div>
+          <div class="munit" id="step-val">0 / 400 steps</div>
+          <div class="mtrack"><div class="mfill" id="ep-prog" style="width:0%"></div></div>
+        </article>
+        <article class="metric">
+          <div class="metric-top"><span class="mlabel">Latest grid draw</span><span class="mico orange">ϟ</span></div>
+          <div class="mval" id="grid-val">—</div>
+          <div class="munit">Teacher / baseline · Ws/step</div>
+        </article>
+        <article class="metric">
+          <div class="metric-top"><span class="mlabel">Peak reduction</span><span class="mico">↘</span></div>
+          <div class="mval" id="peak-val">—</div>
+          <div class="munit">Teacher vs baseline</div>
+        </article>
+        <article class="metric">
+          <div class="metric-top"><span class="mlabel">Task completion</span><span class="mico">✓</span></div>
+          <div class="mval" id="compl-val">—</div>
+          <div class="munit">Completed targets across episodes</div>
+        </article>
+      </div>
 
-      <section class="page-view" id="view-detection" data-title="Data detection" aria-labelledby="detection-title">
-        <div class="page-heading">
-          <div><p class="eyebrow">Signals and diagnostics</p><h1 id="detection-title">Data detection</h1><p class="page-description">Review model signals, simulation thresholds, and completed episode outcomes.</p></div>
-          <span class="pill">⌁ Live signals</span>
-        </div>
-        <div class="content-grid equal">
-          <article class="panel">
-            <div class="panel-title"><div><h3>Signal quality</h3><p class="panel-subtitle">Metrics collected by the current environment</p></div></div>
-            <div class="status-list">
-              <div class="status-row"><span>Teacher grid draw</span><span class="status-value" id="detection-agent-draw">—</span></div>
-              <div class="status-row"><span>Baseline grid draw</span><span class="status-value" id="detection-baseline-draw">—</span></div>
-              <div class="status-row"><span>Peak threshold</span><span class="status-value">3.0 Ws per step</span></div>
-              <div class="status-row"><span>Simulation data</span><span class="status-value"><span class="dot" id="data-status-dot"></span><span id="data-status">Waiting for server</span></span></div>
+      <div class="grid2">
+        <article class="panel">
+          <div class="panel-head">
+            <div><h3>Grid performance</h3><p class="panel-sub">Step-by-step energy draw this episode</p></div>
+            <div class="legend">
+              <span><span class="leg-dot" style="background:var(--teal)"></span>Teacher DQN</span>
+              <span><span class="leg-dot" style="background:var(--orange)"></span>Baseline</span>
             </div>
-          </article>
-          <article class="panel">
-            <div class="panel-title"><div><h3>Risk monitor</h3><p class="panel-subtitle">Live threshold and training notifications</p></div><span class="metric-icon orange">!</span></div>
-            <p id="detection-alert" class="alert"><span class="alert-icon">✓</span><span>Waiting for simulation data.</span></p>
-            <p class="section-note">Alerts describe model simulation output. This project does not monitor a live industrial installation.</p>
-          </article>
+          </div>
+          <canvas id="grid-chart"></canvas>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><h3>Simulation health</h3><span class="mico">◉</span></div>
+          <p id="alert-box" class="alert"><span class="alert-ico">✓</span><span>Ready. Start a training run to collect metrics.</span></p>
+          <div class="slist">
+            <div class="srow"><span class="sk">Model status</span><span class="sval"><span class="dot" id="model-dot"></span><span id="model-status">Waiting to train</span></span></div>
+            <div class="srow"><span class="sk">Energy buffer</span><span class="sval" id="buf-val">—</span></div>
+            <div class="srow"><span class="sk">Current phase</span><span class="sval" id="phase-val">Waiting…</span></div>
+            <div class="srow"><span class="sk">Target distance</span><span class="sval" id="dist-val">—</span></div>
+          </div>
+        </article>
+      </div>
+
+      <div class="grid2 eq">
+        <article class="panel">
+          <div class="panel-head">
+            <div><h3>Episode energy comparison</h3><p class="panel-sub">Total grid energy — lower is better</p></div>
+            <span class="tag">Simulation</span>
+          </div>
+          <canvas id="ep-chart"></canvas>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><div><h3>Experiment snapshot</h3><p class="panel-sub">Current teacher model signals</p></div></div>
+          <div class="slist">
+            <div class="srow"><span class="sk">Episode reward</span><span class="sval" id="reward-val">—</span></div>
+            <div class="srow"><span class="sk">Exploration rate (ε)</span><span class="sval" id="eps-val">—</span></div>
+            <div class="srow"><span class="sk">Latest learning loss</span><span class="sval" id="loss-val">Available after 64 exp.</span></div>
+            <div class="srow"><span class="sk">Peak threshold</span><span class="sval">3.0 Ws / step</span></div>
+          </div>
+          <p class="note">Dashboard reports simulated values; not connected to physical robot hardware.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ── LIVE MONITORING ────────────────────────────── -->
+    <section class="view" id="view-monitoring" data-title="Live monitoring">
+      <div class="pg-head">
+        <div>
+          <div class="eyebrow">Simulation control room</div>
+          <h1>Live monitoring</h1>
+          <p class="pg-desc">Watch the KUKA simulation, tune playback, and control training.</p>
         </div>
-        <article class="panel" style="margin-top:13px">
-          <div class="panel-title"><div><h3>Completed episode results</h3><p class="panel-subtitle">Energy, target completion, and peak reduction by run</p></div><button id="export-button-detection" class="button" type="button">↓ Export CSV</button></div>
-          <div class="table-wrap">
-            <table class="table">
-              <thead><tr><th>Episode</th><th>Reward</th><th>Teacher energy</th><th>Baseline energy</th><th>Peak reduction</th><th>Target</th></tr></thead>
-              <tbody id="results-table"><tr><td colspan="6" class="empty-note">No episodes completed yet.</td></tr></tbody>
+        <span class="pill"><span class="dot" id="mon-dot"></span><span id="mon-status">Waiting</span></span>
+      </div>
+
+      <article class="panel" style="margin-bottom:14px">
+        <div class="panel-head"><div><h3>Teacher training controls</h3><p class="panel-sub">Start with a short run to check the workflow.</p></div></div>
+        <div class="controls">
+          <label>Episodes (1–500)<input id="ep-count" type="number" min="1" max="500" value="3"></label>
+          <button id="start-btn" class="btn primary">▶ Start teacher training</button>
+          <button id="pause-btn" class="btn" disabled>Ⅱ Pause</button>
+          <button id="stop-btn"  class="btn danger" disabled>■ Stop run</button>
+          <label>Playback speed <span class="speed-val"><span id="spd-val">3</span> / 5</span><input id="spd-ctrl" type="range" min="1" max="5" value="3"></label>
+          <button id="reset-btn"  class="btn">Clear results</button>
+          <button id="export-btn" class="btn">↓ Export CSV</button>
+        </div>
+        <p class="note">Playback speed changes how quickly updates are shown; it does not change PyBullet physics.</p>
+        <p id="err-msg" class="err-msg" role="alert" hidden></p>
+      </article>
+
+      <div class="metrics">
+        <article class="metric">
+          <div class="metric-top"><span class="mlabel">Episode reward</span><span class="mico">✦</span></div>
+          <div class="mval" id="mon-reward">—</div><div class="munit">Higher is better</div>
+        </article>
+        <article class="metric">
+          <div class="metric-top"><span class="mlabel">Energy buffer</span><span class="mico orange">ϟ</span></div>
+          <div class="mval" id="mon-buf">—</div>
+          <div class="mgauge"><div class="mgaugefill" id="buf-prog" style="width:0%"></div></div>
+          <div class="munit">50 Ws capacity · 80% efficiency</div>
+        </article>
+        <article class="metric">
+          <div class="metric-top"><span class="mlabel">Target distance</span><span class="mico">⌖</span></div>
+          <div class="mval" id="mon-dist">—</div><div class="munit">Distance to task target</div>
+        </article>
+        <article class="metric">
+          <div class="metric-top"><span class="mlabel">Learning loss</span><span class="mico">⌁</span></div>
+          <div class="mval" id="mon-loss">—</div><div class="munit">Q-value prediction error</div>
+        </article>
+      </div>
+
+      <div class="grid2">
+        <article class="panel">
+          <div class="panel-head">
+            <div><h3>Live energy draw</h3><p class="panel-sub">Teacher DQN vs constant-speed baseline</p></div>
+            <span class="tag">Peak limit 3.0 Ws</span>
+          </div>
+          <canvas id="grid-chart-mon"></canvas>
+        </article>
+        <article class="panel">
+          <div class="panel-head">
+            <div><h3>KUKA iiwa arm pose</h3><p class="panel-sub">Schematic from simulated joint angles</p></div>
+            <span class="tag">6 active joints</span>
+          </div>
+          <canvas id="robot-canvas"></canvas>
+          <p class="note" id="robot-cap">Joint angle schematic · final wrist joint locked.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ── DATA DETECTION ────────────────────────────── -->
+    <section class="view" id="view-detection" data-title="Data detection">
+      <div class="pg-head">
+        <div>
+          <div class="eyebrow">Signals and diagnostics</div>
+          <h1>Data detection</h1>
+          <p class="pg-desc">Review model signals, thresholds, and completed episode outcomes.</p>
+        </div>
+        <span class="pill">⌁ Live signals</span>
+      </div>
+
+      <div class="grid2 eq" style="margin-bottom:14px">
+        <article class="panel">
+          <div class="panel-head"><div><h3>Signal quality</h3><p class="panel-sub">Metrics from current environment</p></div></div>
+          <div class="slist">
+            <div class="srow"><span class="sk">Teacher grid draw</span><span class="sval" id="det-agent">—</span></div>
+            <div class="srow"><span class="sk">Baseline grid draw</span><span class="sval" id="det-base">—</span></div>
+            <div class="srow"><span class="sk">Peak threshold</span><span class="sval">3.0 Ws per step</span></div>
+            <div class="srow"><span class="sk">Simulation data</span><span class="sval"><span class="dot" id="data-dot"></span><span id="data-status">Waiting</span></span></div>
+          </div>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><div><h3>Risk monitor</h3><p class="panel-sub">Live threshold notifications</p></div><span class="mico orange">!</span></div>
+          <p id="det-alert" class="alert"><span class="alert-ico">✓</span><span>Waiting for simulation data.</span></p>
+          <p class="note">Alerts describe simulation output — not a live industrial installation.</p>
+        </article>
+      </div>
+
+      <article class="panel">
+        <div class="panel-head">
+          <div><h3>Completed episode results</h3><p class="panel-sub">Energy, completion, and peak reduction by run</p></div>
+          <button id="exp-det" class="btn">↓ Export CSV</button>
+        </div>
+        <div class="twrap">
+          <table class="tbl">
+            <thead><tr><th>Episode</th><th>Reward</th><th>Teacher energy</th><th>Baseline energy</th><th>Peak reduction</th><th>Target</th></tr></thead>
+            <tbody id="results-table"><tr><td colspan="6" class="empty-note">No episodes completed yet.</td></tr></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <!-- ── MODEL MANAGEMENT ──────────────────────────── -->
+    <section class="view" id="view-management" data-title="Model management">
+      <div class="pg-head">
+        <div>
+          <div class="eyebrow">Research roadmap</div>
+          <h1>Model management</h1>
+          <p class="pg-desc">Track the teacher model configuration and next research stages.</p>
+        </div>
+        <button class="btn primary" data-go="monitoring">▶ Train teacher</button>
+      </div>
+
+      <div class="phase-grid">
+        <article class="phase-card active">
+          <div class="phase-num">Phase 01 · In progress</div>
+          <h3>Teacher DQN</h3>
+          <p>Train and evaluate the PyTorch teacher policy in the simulated KUKA environment.</p>
+        </article>
+        <article class="phase-card">
+          <div class="phase-num">Phase 02 · Planned</div>
+          <h3>Knowledge distillation</h3>
+          <p>Train a smaller student network to reproduce the teacher's policy (T=3, α=0.7).</p>
+        </article>
+        <article class="phase-card">
+          <div class="phase-num">Phase 03 · Planned</div>
+          <h3>Edge deployment</h3>
+          <p>Export to ONNX and evaluate on Raspberry Pi 4 at ≤100 ms per step.</p>
+        </article>
+      </div>
+
+      <div class="grid2 eq">
+        <article class="panel">
+          <div class="panel-head"><div><h3>Teacher DQN configuration</h3><p class="panel-sub">Current research prototype settings</p></div><span class="tag">PyTorch</span></div>
+          <div class="twrap">
+            <table class="tbl">
+              <tbody>
+                <tr><td>Observation space</td><td style="text-align:right;font-weight:700;color:var(--ink)">23 values</td></tr>
+                <tr><td>Discrete actions</td><td style="text-align:right;font-weight:700;color:var(--ink)">25</td></tr>
+                <tr><td>Q-network layers</td><td style="text-align:right;font-weight:700;color:var(--ink)">256 → 256 → 25</td></tr>
+                <tr><td>Replay buffer / batch</td><td style="text-align:right;font-weight:700;color:var(--ink)">10,000 / 64</td></tr>
+                <tr><td>Learning rate / γ</td><td style="text-align:right;font-weight:700;color:var(--ink)">0.001 / 0.99</td></tr>
+                <tr><td>Exploration schedule</td><td style="text-align:right;font-weight:700;color:var(--ink)">ε: 1.0 × 0.995 · min 0.01</td></tr>
+                <tr><td>Target network update</td><td style="text-align:right;font-weight:700;color:var(--ink)">Every 10 episodes</td></tr>
+                <tr><td>Episode phases</td><td style="text-align:right;font-weight:700;color:var(--ink)">Light 0–160 · Heavy 161–400</td></tr>
+              </tbody>
             </table>
           </div>
         </article>
-      </section>
-
-      <section class="page-view" id="view-management" data-title="Model management" aria-labelledby="management-title">
-        <div class="page-heading">
-          <div><p class="eyebrow">Research roadmap</p><h1 id="management-title">Model management</h1><p class="page-description">Track the teacher model configuration and the next stages of the research project.</p></div>
-          <button class="button primary" type="button" data-go-view="monitoring">▶ <span>Train teacher</span></button>
-        </div>
-        <div class="phase-grid" aria-label="Research project stages">
-          <article class="phase-card active"><span class="phase-number">Phase 01 · In progress</span><h3>Teacher DQN</h3><p>Train and evaluate the PyTorch teacher policy in the simulated KUKA environment.</p></article>
-          <article class="phase-card"><span class="phase-number">Phase 02 · Planned</span><h3>Knowledge distillation</h3><p>Train a smaller student network to reproduce the teacher's policy.</p></article>
-          <article class="phase-card"><span class="phase-number">Phase 03 · Planned</span><h3>Edge deployment</h3><p>Export to ONNX and evaluate inference on a Raspberry Pi 4.</p></article>
-        </div>
-        <div class="content-grid equal">
-          <article class="panel">
-            <div class="panel-title"><div><h3>Teacher DQN configuration</h3><p class="panel-subtitle">Current research prototype settings</p></div><span class="tag">PyTorch</span></div>
-            <div class="table-wrap"><table class="table config-table"><tbody>
-              <tr><td>Observation space</td><td>23 values</td></tr><tr><td>Discrete actions</td><td>25</td></tr>
-              <tr><td>Q-network layers</td><td>256 → 256 → 25</td></tr><tr><td>Replay buffer / batch</td><td>10,000 / 64</td></tr>
-              <tr><td>Learning rate / γ</td><td>0.001 / 0.99</td></tr><tr><td>Exploration schedule</td><td>ε: 1.0 × 0.995 · min 0.01</td></tr>
-              <tr><td>Target network update</td><td>Every 10 episodes</td></tr><tr><td>Episode phases</td><td>Light 0–160 · Heavy 161–400</td></tr>
-            </tbody></table></div>
-          </article>
-          <article class="panel">
-            <div class="panel-title"><div><h3>Training history</h3><p class="panel-subtitle">Most recent completed episodes</p></div><button id="export-button-management" class="button" type="button">↓ Export CSV</button></div>
-            <ol class="history" id="episode-log"><li>No episodes completed yet.</li></ol>
-          </article>
-        </div>
-        <article class="panel" style="margin-top:13px">
-          <div class="panel-title"><div><h3>About this experiment</h3><p class="panel-subtitle">Interpret results in the right context</p></div></div>
-          <p class="section-note">The baseline follows each target with inverse kinematics and maximum joint speed in the same seeded simulation. DQN actions are discrete velocity commands, not torque commands. The robot pose is an angle-based 2D schematic, not a PyBullet camera render. The dataset calibration, distillation, grid-fault scenarios, and Raspberry Pi/ONNX execution are planned stages, not currently implemented results.</p>
+        <article class="panel">
+          <div class="panel-head"><div><h3>Training history</h3><p class="panel-sub">Most recent completed episodes</p></div><button id="exp-mgmt" class="btn">↓ Export CSV</button></div>
+          <ol class="hist" id="ep-log"><li>No episodes completed yet.</li></ol>
         </article>
-      </section>
-    </main>
-  </div>
+      </div>
 
-  <script>
-    const $ = (id) => document.getElementById(id);
-    let currentHistory = [];
-    let lastSeriesLength = -1;
-    let lastRunId = -1;
-    let polling = false;
-    let latestState = null;
-    let pollTimer = null;
-    let pollDelay = 800;
+      <article class="panel" style="margin-top:13px">
+        <div class="panel-head">
+          <div>
+            <h3>Upload teacher weights</h3>
+            <p class="panel-sub">Use a compatible PyTorch state dictionary for this 23-input, 25-action teacher.</p>
+          </div>
+          <span id="model-file-status" class="tag warn">No saved teacher</span>
+        </div>
+        <div class="controls">
+          <label for="model-file">PyTorch weights (.pt or .pth)
+            <input id="model-file" type="file" accept=".pt,.pth">
+          </label>
+          <button id="upload-model-btn" class="btn">Upload and validate</button>
+          <label style="display:flex;align-items:center;gap:7px;letter-spacing:0">
+            <input id="resume-model" type="checkbox" disabled>
+            Initialize training from saved/uploaded weights
+          </label>
+        </div>
+        <p id="model-upload-message" class="note">Upload weights here, then enable the checkbox to continue training from them. New runs start fresh otherwise. Maximum file size: 16 MB.</p>
+      </article>
 
-    function setPollDelay(delay) {
-      if (pollDelay === delay && pollTimer) return;
-      pollDelay = delay;
-      if (pollTimer) window.clearInterval(pollTimer);
-      pollTimer = window.setInterval(poll, delay);
-    }
+      <article class="panel" style="margin-top:13px">
+        <div class="panel-head"><div><h3>About this experiment</h3><p class="panel-sub">Interpret results in context</p></div></div>
+        <p class="note">The baseline follows each target with inverse kinematics and maximum joint speed in the same seeded simulation. DQN actions are discrete velocity commands. The robot pose is an angle-based 2D schematic, not a PyBullet camera render. The dataset calibration, distillation, grid-fault scenarios, and Raspberry Pi/ONNX execution are planned stages, not currently implemented.</p>
+      </article>
+    </section>
+  </main>
+</div>
 
-    function fmt(value, digits = 2) {
-      return typeof value === "number" && Number.isFinite(value) ? value.toFixed(digits) : "—";
-    }
+<script>
+  /* ── helpers ──────────────────────────────────────────────── */
+  const $ = id => document.getElementById(id);
+  const fmt = (v, d=2) => typeof v === 'number' && isFinite(v) ? v.toFixed(d) : '—';
 
-    function chartAxes(ctx, width, height, min, max, unit) {
-      const box = { left: 48, right: 12, top: 25, bottom: 28 };
-      ctx.strokeStyle = "#e5ece8";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(box.left, box.top);
-      ctx.lineTo(box.left, height - box.bottom);
-      ctx.lineTo(width - box.right, height - box.bottom);
-      ctx.stroke();
-      ctx.fillStyle = "#84928e";
-      ctx.font = "10px Segoe UI, sans-serif";
-      ctx.fillText(`${max.toFixed(1)} ${unit}`, 2, box.top + 4);
-      ctx.fillText(`${min.toFixed(1)} ${unit}`, 2, height - box.bottom);
-      return box;
-    }
+  /* ── toast ────────────────────────────────────────────────── */
+  function toast(msg, kind = '') {
+    const el = document.createElement('div');
+    el.className = `toast${kind ? ' '+kind : ''}`;
+    el.textContent = msg;
+    $('toast-container').appendChild(el);
+    setTimeout(() => {
+      el.style.animation = 'toastOut .25s ease forwards';
+      setTimeout(() => el.remove(), 260);
+    }, 2800);
+  }
 
-    function prepareCanvas(id, height = 220) {
-      const canvas = $(id);
-      if (!canvas) return null;
-      const width = Math.max(280, canvas.clientWidth);
-      const ratio = window.devicePixelRatio || 1;
-      canvas.width = width * ratio;
-      canvas.height = height * ratio;
-      const ctx = canvas.getContext("2d");
-      ctx.scale(ratio, ratio);
-      ctx.clearRect(0, 0, width, height);
-      return { canvas, ctx, width, height };
-    }
-
-    function drawGridChart(canvasId, series) {
-      const drawing = prepareCanvas(canvasId);
-      if (!drawing) return;
-      const { ctx, width, height } = drawing;
-      ctx.fillStyle = "#879490";
-      ctx.font = "10px Segoe UI, sans-serif";
-      ctx.fillText("Simulated grid draw · Ws per step", 48, 14);
-      if (!series.length) {
-        ctx.fillText("Start training to see the baseline and teacher policy.", 48, 49);
-        return;
-      }
-      const values = series.flatMap((point) => [point.agent, point.baseline]).filter(Number.isFinite);
-      const max = Math.max(3, ...values) * 1.08;
-      const box = chartAxes(ctx, width, height, 0, max, "Ws");
-      const thresholdY = box.top + (max - 3) / max * (height - box.top - box.bottom);
-      ctx.setLineDash([5, 4]);
-      ctx.strokeStyle = "#dc8b6b";
-      ctx.beginPath();
-      ctx.moveTo(box.left, thresholdY);
-      ctx.lineTo(width - box.right, thresholdY);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      for (const [key, color] of [["baseline", "#ed9a65"], ["agent", "#087f82"]]) {
-        const points = series.map((item, index) => ({ index, value: item[key] })).filter((item) => Number.isFinite(item.value));
-        if (!points.length) continue;
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        points.forEach((point, index) => {
-          const x = box.left + point.index / Math.max(1, series.length - 1) * (width - box.left - box.right);
-          const y = box.top + (max - point.value) / max * (height - box.top - box.bottom);
-          if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-      }
-    }
-
-    function drawEpisodeChart(history) {
-      const drawing = prepareCanvas("episode-chart");
-      if (!drawing) return;
-      const { ctx, width, height } = drawing;
-      ctx.fillStyle = "#879490";
-      ctx.font = "10px Segoe UI, sans-serif";
-      ctx.fillText("Total grid energy per episode · Ws", 48, 14);
-      if (!history.length) {
-        ctx.fillText("Complete an episode to compare energy totals.", 48, 49);
-        return;
-      }
-      const values = history.flatMap((item) => [item.grid_energy, item.baseline_grid_energy]).filter(Number.isFinite);
-      const max = Math.max(1, ...values) * 1.08;
-      const box = chartAxes(ctx, width, height, 0, max, "Ws");
-      const groupWidth = (width - box.left - box.right) / history.length;
-      const barWidth = Math.max(3, Math.min(20, groupWidth * .32));
-      history.forEach((item, index) => {
-        const x = box.left + index * groupWidth + groupWidth / 2;
-        for (const [value, color, offset] of [
-          [item.baseline_grid_energy, "#ed9a65", -barWidth * .55],
-          [item.grid_energy, "#087f82", barWidth * .55]
-        ]) {
-          const barHeight = value / max * (height - box.top - box.bottom);
-          ctx.fillStyle = color;
-          ctx.fillRect(x + offset - barWidth / 2, height - box.bottom - barHeight, barWidth, barHeight);
-        }
-      });
-    }
-
-    function drawRobot(joints = []) {
-      const drawing = prepareCanvas("robot-canvas", 242);
-      if (!drawing) return;
-      const { ctx, width, height } = drawing;
-      const originX = width * .5;
-      const originY = height - 31;
-      const lengths = [34, 32, 30, 28, 25, 22];
-      let x = originX;
-      let y = originY;
-      let angle = -Math.PI / 2;
-      ctx.fillStyle = "#dce8e3";
-      ctx.fillRect(originX - 40, originY, 80, 13);
-      ctx.lineWidth = 9;
-      ctx.lineCap = "round";
-      for (let index = 0; index < lengths.length; index += 1) {
-        angle += (Number(joints[index]) || 0) * (index % 2 === 0 ? 1 : .65);
-        const nextX = x + Math.cos(angle) * lengths[index];
-        const nextY = y + Math.sin(angle) * lengths[index];
-        ctx.strokeStyle = index < 3 ? "#78bcb1" : "#087f82";
-        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(nextX, nextY); ctx.stroke();
-        ctx.fillStyle = "#fff";
-        ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = "#087f82"; ctx.lineWidth = 2; ctx.stroke();
-        x = nextX; y = nextY;
-      }
-      ctx.fillStyle = "#ed8455";
-      ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
-    }
-
-    function setActiveView(view, updateHash = true) {
-      const target = $(`view-${view}`) ? view : "overview";
-      document.querySelectorAll(".page-view").forEach((page) => page.classList.toggle("active", page.id === `view-${target}`));
-      document.querySelectorAll("[data-view-target]").forEach((button) => {
-        const active = button.dataset.viewTarget === target;
-        button.classList.toggle("active", active);
-        if (active) button.setAttribute("aria-current", "page");
-        else button.removeAttribute("aria-current");
-      });
-      $("breadcrumb-current").textContent = $(`view-${target}`).dataset.title;
-      if (updateHash && location.hash !== `#${target}`) history.replaceState(null, "", `#${target}`);
-      if (target === "monitoring") {
-        drawGridChart("grid-chart-monitor", latestState?.series || []);
-        drawRobot(latestState?.joint_positions || []);
-      }
-    }
-
-    document.querySelectorAll("[data-view-target]").forEach((button) => {
-      button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
+  /* ── navigation ───────────────────────────────────────────── */
+  let activeView = 'overview';
+  function goTo(view) {
+    if (!$('view-' + view)) view = 'overview';
+    document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
+    document.querySelectorAll('.nav-btn').forEach(b => {
+      const active = b.dataset.view === view;
+      b.classList.toggle('active', active);
+      if (active) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
     });
-    document.querySelectorAll("[data-go-view]").forEach((button) => {
-      button.addEventListener("click", () => setActiveView(button.dataset.goView));
-    });
-    window.addEventListener("hashchange", () => setActiveView(location.hash.slice(1), false));
-    if (location.hash) setActiveView(location.hash.slice(1), false);
-
-    function render(state) {
-      latestState = state;
-      const messages = {
-        idle: state.pybullet_available ? "Ready · local simulation" : "PyBullet unavailable",
-        running: state.stage === "baseline" ? "Measuring baseline" : "Training",
-        paused: "Training paused",
-        completed: "Training complete",
-        stopped: "Training stopped",
-        error: "Training failed"
-      };
-      $("status-text").textContent = messages[state.status] || "Local simulation";
-      $("status-dot").className = `dot${state.status === "running" ? " running" : state.status === "error" || !state.pybullet_available ? " error" : ""}`;
-      $("monitor-dot").className = `dot${state.status === "running" ? " running" : state.status === "error" || !state.pybullet_available ? " error" : ""}`;
-      $("monitor-status").textContent = messages[state.status] || "Local simulation";
-      $("model-status").textContent = messages[state.status] || "Local simulation";
-      $("data-status").textContent = state.pybullet_available ? "Connected" : "PyBullet unavailable";
-      $("data-status-dot").className = `dot${state.pybullet_available ? " running" : " error"}`;
-      $("start-button").disabled = ["running", "paused"].includes(state.status) || !state.pybullet_available;
-      $("pause-button").disabled = !["running", "paused"].includes(state.status);
-      $("pause-button").textContent = state.status === "paused" ? "▶ Resume" : "Ⅱ Pause";
-      $("stop-button").disabled = !["running", "paused"].includes(state.status);
-      $("error-message").hidden = !state.error;
-      $("error-message").textContent = state.error ? `Training error: ${state.error}` : "";
-      $("episode-value").textContent = `${state.episode || 0} / ${state.episodes_requested || 0}`;
-      $("step-value").textContent = `${state.episode_step || 0} / ${state.max_steps || 400} simulation steps`;
-      $("episode-progress").style.width = `${Math.min(100, 100 * (state.episode_step || 0) / (state.max_steps || 400))}%`;
-      $("reward-value").textContent = fmt(state.reward);
-      $("monitor-reward").textContent = fmt(state.reward);
-      $("grid-value").textContent = `${fmt(state.agent_grid_draw)} / ${fmt(state.baseline_grid_draw)} Ws`;
-      $("buffer-value").textContent = `${fmt(state.buffer_level)} / 50 Ws`;
-      $("monitor-buffer").textContent = `${fmt(state.buffer_level)} Ws`;
-      $("buffer-progress").style.width = `${Math.max(0, Math.min(100, (state.buffer_level || 0) / 50 * 100))}%`;
-      $("distance-value").textContent = `${fmt(state.distance)} m`;
-      $("monitor-distance").textContent = `${fmt(state.distance)} m`;
-      $("epsilon-value").textContent = fmt(state.epsilon, 3);
-      $("loss-value").textContent = state.loss == null ? "Available after 64 experiences" : fmt(state.loss, 5);
-      $("monitor-loss").textContent = state.loss == null ? "—" : fmt(state.loss, 5);
-      $("speed-control").value = state.speed || 3;
-      $("speed-value").textContent = state.speed || 3;
-      $("phase-value").textContent = state.episode_step ? (state.phase === 0 ? "Light task · charging buffer" : "Heavy task · using buffer") : "Waiting for simulation…";
-      $("detection-agent-draw").textContent = `${fmt(state.agent_grid_draw)} Ws`;
-      $("detection-baseline-draw").textContent = `${fmt(state.baseline_grid_draw)} Ws`;
-
-      const last = currentHistory[currentHistory.length - 1];
-      $("peak-value").textContent = last ? `${fmt(last.peak_reduction_percent)}%` : "—";
-      const completions = currentHistory.filter((item) => item.task_done).length;
-      $("completion-value").textContent = currentHistory.length ? `${fmt(completions / currentHistory.length * 100, 1)}%` : "—";
-      drawRobot(state.joint_positions);
-      if (state.series.length !== lastSeriesLength || state.status === "running") {
-        drawGridChart("grid-chart", state.series);
-        drawGridChart("grid-chart-monitor", state.series);
-        lastSeriesLength = state.series.length;
-      }
-      if (state.run_id !== lastRunId || (state.history || []).length !== currentHistory.length) {
-        lastRunId = state.run_id;
-        currentHistory = state.history || [];
-        drawEpisodeChart(currentHistory);
-        const log = $("episode-log");
-        log.replaceChildren();
-        if (!currentHistory.length) {
-          const item = document.createElement("li"); item.textContent = "No episodes completed yet."; log.append(item);
-        } else {
-          currentHistory.slice().reverse().forEach((item) => {
-            const row = document.createElement("li");
-            row.textContent = `Episode ${item.episode}: reward ${fmt(item.reward)}, grid ${fmt(item.grid_energy)} / baseline ${fmt(item.baseline_grid_energy)} Ws, peak reduction ${fmt(item.peak_reduction_percent)}%, ${item.task_done ? "target reached" : "target not reached"}`;
-            log.append(row);
-          });
-        }
-        const table = $("results-table");
-        table.replaceChildren();
-        if (!currentHistory.length) {
-          const row = table.insertRow();
-          const cell = row.insertCell(); cell.colSpan = 6; cell.className = "empty-note"; cell.textContent = "No episodes completed yet.";
-        } else {
-          currentHistory.slice().reverse().forEach((item) => {
-            const row = table.insertRow();
-            [item.episode, fmt(item.reward), `${fmt(item.grid_energy)} Ws`, `${fmt(item.baseline_grid_energy)} Ws`, `${fmt(item.peak_reduction_percent)}%`, item.task_done ? "Target reached" : "Not reached"].forEach((value, index) => {
-              const cell = row.insertCell(); cell.textContent = value;
-              if (index === 4) cell.className = "metric-cell";
-              if (index === 5) { const tag = document.createElement("span"); tag.className = `tag${item.task_done ? "" : " warning"}`; tag.textContent = value; cell.replaceChildren(tag); }
-            });
-          });
-        }
-      }
-
-      const alert = $("alert-box");
-      const detectionAlert = $("detection-alert");
-      const setAlert = (element, kind, message) => {
-        element.className = `alert${kind ? ` ${kind}` : ""}`;
-        element.replaceChildren();
-        const icon = document.createElement("span"); icon.className = "alert-icon"; icon.textContent = kind === "error" ? "!" : kind === "warning" ? "△" : "✓";
-        const text = document.createElement("span"); text.textContent = message;
-        element.append(icon, text);
-      };
-      if (state.error) {
-        setAlert(alert, "error", state.error); setAlert(detectionAlert, "error", state.error);
-      } else if (!state.pybullet_available) {
-        const message = "PyBullet is not installed in this Python environment. Install project requirements and restart the Flask dashboard.";
-        setAlert(alert, "warning", message); setAlert(detectionAlert, "warning", message);
-      } else if (state.agent_grid_draw > 3) {
-        const message = `Teacher grid draw ${fmt(state.agent_grid_draw)} Ws exceeded the 3.0 Ws peak threshold at this step.`;
-        setAlert(alert, "warning", message); setAlert(detectionAlert, "warning", message);
-      } else if (state.status === "running" && state.stage === "baseline") {
-        const message = "Measuring the constant-speed controller on the episode's seeded KUKA task.";
-        setAlert(alert, "", message); setAlert(detectionAlert, "", message);
-      } else if (state.status === "running") {
-        const message = `Teacher episode ${state.episode}: monitoring energy draw, target distance, and buffer charge.`;
-        setAlert(alert, "", message); setAlert(detectionAlert, "", message);
-      } else if (last) {
-        const message = `${completions}/${currentHistory.length} tasks completed. Results are simulation measurements, not physical robot tests.`;
-        setAlert(alert, "", message); setAlert(detectionAlert, "", message);
-      } else {
-        const message = "Ready. Start a short training run to collect KUKA simulation metrics.";
-        setAlert(alert, "", message); setAlert(detectionAlert, "", message);
-      }
-    }
-
-    async function api(path, body) {
-      const response = await fetch(path, {
-        method: body === undefined ? "GET" : "POST",
-        headers: body === undefined ? {} : { "Content-Type": "application/json" },
-        body: body === undefined ? undefined : JSON.stringify(body)
-      });
-      const contentType = response.headers.get("content-type") || "";
-      if (!contentType.includes("application/json")) {
-        throw new Error("The Flask dashboard is not connected. Start it with: python -m src.dashboard");
-      }
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || `Server returned ${response.status}`);
-      return data;
-    }
-
-    async function poll() {
-      if (polling) return;
-      polling = true;
-      try {
-        render(await api("/api/status"));
-        setPollDelay(800);
-      } catch (error) {
-        $("status-text").textContent = "Flask server not connected";
-        $("status-dot").className = "dot error";
-        $("monitor-dot").className = "dot error";
-        $("monitor-status").textContent = "Server not connected";
-        $("model-status").textContent = "Server not connected";
-        $("start-button").disabled = true;
-        $("data-status").textContent = "Server not connected";
-        $("data-status-dot").className = "dot error";
-        $("error-message").hidden = false;
-        $("error-message").textContent = error.message;
-        const message = "Static preview only. Start the Flask dashboard to connect the simulation and training controls.";
-        for (const id of ["alert-box", "detection-alert"]) {
-          const alert = $(id); alert.className = "alert warning"; alert.replaceChildren();
-          const icon = document.createElement("span"); icon.className = "alert-icon"; icon.textContent = "!";
-          const text = document.createElement("span"); text.textContent = message; alert.append(icon, text);
-        }
-        setPollDelay(5000);
-      } finally {
-        polling = false;
-      }
-    }
-
-    async function postAndRefresh(path, body) {
-      try {
-        await api(path, body);
-        await poll();
-      } catch (error) {
-        $("error-message").hidden = false;
-        $("error-message").textContent = error.message;
-      }
-    }
-
-    function exportHistory() {
-      if (!currentHistory.length) {
-        $("error-message").hidden = false;
-        $("error-message").textContent = "Complete an episode before exporting training results.";
-        setActiveView("monitoring");
-        return;
-      }
-      const columns = ["episode", "steps", "reward", "grid_energy_ws", "baseline_grid_energy_ws", "peak_grid_draw", "baseline_peak_grid_draw", "peak_reduction_percent", "task_done", "distance_m", "buffer_used_ws", "epsilon", "mean_loss"];
-      const sourceKeys = ["episode", "steps", "reward", "grid_energy", "baseline_grid_energy", "peak_grid_draw", "baseline_peak_grid_draw", "peak_reduction_percent", "task_done", "distance", "buffer_used", "epsilon", "mean_loss"];
-      const rows = currentHistory.map((episode) => sourceKeys.map((key) => `"${String(episode[key] ?? "").replaceAll('"', '""')}"`).join(","));
-      const blob = new Blob([[columns.join(","), ...rows].join("\r\n")], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url; link.download = "training_history.csv"; link.click();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }
-
-    $("start-button").addEventListener("click", () => postAndRefresh("/api/train", { episodes: Number($("episode-count").value) }));
-    $("pause-button").addEventListener("click", () => postAndRefresh($("pause-button").textContent.includes("Resume") ? "/api/resume" : "/api/pause", {}));
-    $("stop-button").addEventListener("click", () => postAndRefresh("/api/stop", {}));
-    $("reset-button").addEventListener("click", async () => {
-      try { render(await api("/api/reset", {})); }
-      catch (error) { $("error-message").hidden = false; $("error-message").textContent = error.message; }
-    });
-    $("speed-control").addEventListener("input", () => {
-      $("speed-value").textContent = $("speed-control").value;
-      postAndRefresh("/api/speed", { speed: Number($("speed-control").value) });
-    });
-    ["export-button", "export-button-detection", "export-button-management"].forEach((id) => $(id).addEventListener("click", exportHistory));
-    window.addEventListener("resize", () => {
+    $('crumb').textContent = $('view-' + view).dataset.title;
+    activeView = view;
+    if (view === 'monitoring') {
+      drawGridChart('grid-chart-mon', latestState?.series || []);
       drawRobot(latestState?.joint_positions || []);
-      drawGridChart("grid-chart", latestState?.series || []);
-      drawGridChart("grid-chart-monitor", latestState?.series || []);
-      drawEpisodeChart(currentHistory);
+    }
+  }
+  document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => goTo(b.dataset.view)));
+  document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => goTo(b.dataset.go)));
+
+  /* ── canvas helper ────────────────────────────────────────── */
+  function prepCanvas(id, h = 220) {
+    const el = $(id); if (!el) return null;
+    const w = Math.max(280, el.clientWidth);
+    const r = devicePixelRatio || 1;
+    el.width = w * r; el.height = h * r;
+    const ctx = el.getContext('2d');
+    ctx.scale(r, r);
+    ctx.clearRect(0, 0, w, h);
+    return { ctx, w, h };
+  }
+
+  /* ── grid draw chart ──────────────────────────────────────── */
+  function drawGridChart(id, series) {
+    const d = prepCanvas(id); if (!d) return;
+    const { ctx, w, h } = d;
+    const box = { l: 50, r: 14, t: 26, b: 30 };
+    ctx.fillStyle = '#879490'; ctx.font = '10px Inter,sans-serif';
+    ctx.fillText('Simulated grid draw · Ws per step', box.l, 15);
+    if (!series.length) { ctx.fillText('Start training to see live data.', box.l, 50); return; }
+    const vals = series.flatMap(p => [p.agent, p.baseline]).filter(isFinite);
+    const maxV = Math.max(3, ...vals) * 1.08;
+    // axes
+    ctx.strokeStyle = '#e2ece8'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(box.l, box.t); ctx.lineTo(box.l, h - box.b); ctx.lineTo(w - box.r, h - box.b); ctx.stroke();
+    ctx.fillStyle = '#8fa09d'; ctx.font = '9px Inter,sans-serif';
+    ctx.fillText(maxV.toFixed(1)+' Ws', 2, box.t + 4);
+    ctx.fillText('0 Ws', 2, h - box.b);
+    // peak line
+    const py = v => box.t + (maxV - v) / maxV * (h - box.t - box.b);
+    const px = i => box.l + i / Math.max(1, series.length - 1) * (w - box.l - box.r);
+    const peakY = py(3.0);
+    ctx.setLineDash([5, 4]); ctx.strokeStyle = 'rgba(217,89,76,.35)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(box.l, peakY); ctx.lineTo(w - box.r, peakY); ctx.stroke();
+    ctx.setLineDash([]); ctx.fillStyle = 'rgba(217,89,76,.7)'; ctx.font = '9px Inter,sans-serif';
+    ctx.fillText('Peak 3.0 Ws', box.l + 4, peakY - 3);
+    // lines
+    for (const [key, col] of [['baseline', '#e97b44'], ['agent', '#08807f']]) {
+      const pts = series.map((p, i) => ({ x: px(i), y: py(p[key]) })).filter(p => isFinite(p.y));
+      if (!pts.length) continue;
+      // gradient fill
+      const grd = ctx.createLinearGradient(0, box.t, 0, h - box.b);
+      grd.addColorStop(0, col + '30'); grd.addColorStop(1, col + '00');
+      ctx.beginPath();
+      pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.lineTo(pts[pts.length-1].x, h - box.b); ctx.lineTo(pts[0].x, h - box.b); ctx.closePath();
+      ctx.fillStyle = grd; ctx.fill();
+      // line
+      ctx.beginPath(); ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+      pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+      // last point dot
+      const lp = pts[pts.length - 1];
+      ctx.beginPath(); ctx.arc(lp.x, lp.y, 3, 0, Math.PI*2);
+      ctx.fillStyle = col; ctx.fill();
+    }
+  }
+
+  /* ── episode chart ────────────────────────────────────────── */
+  function drawEpChart(hist) {
+    const d = prepCanvas('ep-chart'); if (!d) return;
+    const { ctx, w, h } = d;
+    const box = { l: 50, r: 14, t: 26, b: 30 };
+    ctx.fillStyle = '#879490'; ctx.font = '10px Inter,sans-serif';
+    ctx.fillText('Total grid energy per episode · Ws', box.l, 15);
+    if (!hist.length) { ctx.fillText('Complete an episode to compare energy totals.', box.l, 50); return; }
+    ctx.strokeStyle = '#e2ece8'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(box.l, box.t); ctx.lineTo(box.l, h-box.b); ctx.lineTo(w-box.r, h-box.b); ctx.stroke();
+    const vals = hist.flatMap(it => [it.grid_energy, it.baseline_grid_energy]).filter(isFinite);
+    const maxV = Math.max(1, ...vals) * 1.1;
+    ctx.fillStyle = '#8fa09d'; ctx.font = '9px Inter,sans-serif';
+    ctx.fillText(maxV.toFixed(0)+' Ws', 2, box.t + 4);
+    const gw = (w - box.l - box.r) / hist.length;
+    const bw = Math.max(3, Math.min(20, gw * .32));
+    hist.forEach((it, i) => {
+      const cx = box.l + i * gw + gw / 2;
+      for (const [val, col, off] of [
+        [it.baseline_grid_energy, '#e97b44', -bw * .6],
+        [it.grid_energy,          '#08807f',  bw * .6]
+      ]) {
+        const bh = (val / maxV) * (h - box.t - box.b);
+        const grd = ctx.createLinearGradient(0, h-box.b-bh, 0, h-box.b);
+        grd.addColorStop(0, col); grd.addColorStop(1, col+'88');
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.roundRect ? ctx.roundRect(cx + off - bw/2, h-box.b-bh, bw, bh, [3,3,0,0]) : ctx.rect(cx+off-bw/2, h-box.b-bh, bw, bh);
+        ctx.fill();
+      }
     });
-    drawRobot();
-    drawGridChart("grid-chart", []);
-    drawGridChart("grid-chart-monitor", []);
-    drawEpisodeChart([]);
-    poll();
-    setPollDelay(800);
-  </script>
+  }
+
+  /* ── robot arm ────────────────────────────────────────────── */
+  let armT = 0;
+  function drawRobot(joints = []) {
+    const d = prepCanvas('robot-canvas', 242); if (!d) return;
+    const { ctx, w, h } = d;
+    armT += 0.018;
+    const fallback = [Math.sin(armT)*.45, Math.sin(armT*.8+1)*.4, Math.sin(armT*.6+2)*.35, Math.sin(armT*.7-.5)*.3, Math.sin(armT*1.1+.8)*.25, Math.sin(armT*.9+1.5)*.2];
+    const angles = joints.length >= 6 ? joints : fallback;
+    const ox = w * .5, oy = h - 28;
+    // base plate
+    const grd = ctx.createLinearGradient(ox-44, oy, ox+44, oy+14);
+    grd.addColorStop(0, '#d4e8e2'); grd.addColorStop(1, '#c0dcd4');
+    ctx.fillStyle = grd;
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(ox-44, oy, 88, 14, 5) : ctx.rect(ox-44, oy, 88, 14);
+    ctx.fill();
+    // joints
+    const lens = [36, 32, 30, 27, 24, 21];
+    let x = ox, y = oy, angle = -Math.PI / 2;
+    const joints6 = angles.slice(0, 6);
+    joints6.forEach((a, i) => {
+      angle += a * (i % 2 === 0 ? 1 : .65);
+      const nx = x + Math.cos(angle) * lens[i];
+      const ny = y + Math.sin(angle) * lens[i];
+      // shadow
+      ctx.shadowColor = 'rgba(8,128,127,.15)'; ctx.shadowBlur = 8;
+      ctx.strokeStyle = i < 3 ? '#78c0b5' : '#08807f';
+      ctx.lineWidth = 10 - i;
+      ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(nx, ny); ctx.stroke();
+      ctx.shadowBlur = 0;
+      // joint dot
+      ctx.beginPath(); ctx.arc(x, y, 5.5, 0, Math.PI*2);
+      ctx.fillStyle = '#fff'; ctx.fill();
+      ctx.strokeStyle = i < 3 ? '#08807f' : '#065f60'; ctx.lineWidth = 2; ctx.stroke();
+      x = nx; y = ny;
+    });
+    // end effector glow
+    ctx.shadowColor = '#08807f'; ctx.shadowBlur = 14;
+    ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI*2);
+    ctx.fillStyle = '#e97b44'; ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  /* animate robot even when not polling */
+  function animRobot() {
+    if (activeView === 'monitoring') drawRobot(latestState?.joint_positions || []);
+    requestAnimationFrame(animRobot);
+  }
+  requestAnimationFrame(animRobot);
+
+  /* ── alert helper ─────────────────────────────────────────── */
+  function setAlert(id, kind, msg) {
+    const el = $(id); if (!el) return;
+    el.className = `alert${kind ? ' '+kind : ''}`;
+    el.replaceChildren();
+    const ico = document.createElement('span'); ico.className = 'alert-ico';
+    ico.textContent = kind === 'error' ? '!' : kind === 'warning' ? '△' : '✓';
+    const txt = document.createElement('span'); txt.textContent = msg;
+    el.append(ico, txt);
+  }
+
+  /* ── state ────────────────────────────────────────────────── */
+  let hist = [], lastHistLen = -1, lastRunId = -1, latestState = null;
+  let prevStatus = null;
+
+  function render(s) {
+    latestState = s;
+    const msgs = { idle: s.pybullet_available ? 'Ready · local simulation' : 'PyBullet unavailable', running: s.stage === 'baseline' ? 'Measuring baseline' : 'Training', paused: 'Training paused', completed: 'Training complete', stopped: 'Training stopped', error: 'Training failed' };
+    const statusText = msgs[s.status] || 'Local simulation';
+    const isRunning = s.status === 'running', isErr = s.status === 'error' || !s.pybullet_available;
+
+    // toast on status change
+    if (prevStatus !== s.status) {
+      if (s.status === 'running') toast('Training started', 'success');
+      else if (s.status === 'completed') toast('Training complete ✓', 'success');
+      else if (s.status === 'paused') toast('Training paused');
+      else if (s.status === 'error') toast('Training error', 'error');
+      prevStatus = s.status;
+    }
+
+    const dotCls = `dot${isRunning ? ' running' : isErr ? ' error' : ''}`;
+    ['sdot','model-dot','mon-dot'].forEach(id => { if ($(id)) $(id).className = dotCls; });
+    $('stxt').textContent = statusText;
+    $('mon-status').textContent = statusText;
+    $('model-status').textContent = statusText;
+    $('data-status').textContent = s.pybullet_available ? 'Connected' : 'PyBullet unavailable';
+    $('data-dot').className = `dot${s.pybullet_available ? ' running' : ' error'}`;
+    $('model-file-status').textContent = s.model_available ? 'Teacher weights ready' : 'No saved teacher';
+    $('model-file-status').className = `tag${s.model_available ? '' : ' warn'}`;
+    $('resume-model').disabled = !s.model_available || ['running','paused'].includes(s.status);
+
+    $('start-btn').disabled = ['running','paused'].includes(s.status) || !s.pybullet_available;
+    $('pause-btn').disabled = !['running','paused'].includes(s.status);
+    $('pause-btn').textContent = s.status === 'paused' ? '▶ Resume' : 'Ⅱ Pause';
+    $('stop-btn').disabled  = !['running','paused'].includes(s.status);
+    $('err-msg').hidden = !s.error;
+    if (s.error) $('err-msg').textContent = `Training error: ${s.error}`;
+
+    $('ep-val').textContent = `${s.episode||0} / ${s.episodes_requested||0}`;
+    $('step-val').textContent = `${s.episode_step||0} / ${s.max_steps||400} steps`;
+    $('ep-prog').style.width = `${Math.min(100, 100*(s.episode_step||0)/(s.max_steps||400))}%`;
+    $('grid-val').textContent = `${fmt(s.agent_grid_draw)} / ${fmt(s.baseline_grid_draw)} Ws`;
+    $('buf-val').textContent = `${fmt(s.buffer_level)} / 50 Ws`;
+    $('mon-buf').textContent = `${fmt(s.buffer_level)} Ws`;
+    $('buf-prog').style.width = `${Math.min(100, Math.max(0, (s.buffer_level||0)/50*100))}%`;
+    $('phase-val').textContent = s.episode_step ? (s.phase===0 ? 'Light task · charging buffer' : 'Heavy task · using buffer') : 'Waiting…';
+    $('dist-val').textContent = `${fmt(s.distance)} m`;
+    $('mon-dist').textContent = `${fmt(s.distance)} m`;
+    $('reward-val').textContent = fmt(s.reward);
+    $('mon-reward').textContent = fmt(s.reward);
+    $('eps-val').textContent = fmt(s.epsilon, 3);
+    $('loss-val').textContent = s.loss == null ? 'Available after 64 exp.' : fmt(s.loss, 5);
+    $('mon-loss').textContent = s.loss == null ? '—' : fmt(s.loss, 5);
+    $('spd-ctrl').value = s.speed || 3;
+    $('spd-val').textContent = s.speed || 3;
+    $('det-agent').textContent = `${fmt(s.agent_grid_draw)} Ws`;
+    $('det-base').textContent = `${fmt(s.baseline_grid_draw)} Ws`;
+
+    const last = hist[hist.length-1];
+    $('peak-val').textContent = last ? `${fmt(last.peak_reduction_percent)}%` : '—';
+    const done = hist.filter(it=>it.task_done).length;
+    $('compl-val').textContent = hist.length ? `${fmt(done/hist.length*100,1)}%` : '—';
+
+    drawRobot(s.joint_positions);
+    drawGridChart('grid-chart', s.series);
+    if (activeView === 'monitoring') drawGridChart('grid-chart-mon', s.series);
+
+    if (s.run_id !== lastRunId || (s.history||[]).length !== lastHistLen) {
+      lastRunId = s.run_id; hist = s.history || []; lastHistLen = hist.length;
+      drawEpChart(hist);
+      const log = $('ep-log'); log.replaceChildren();
+      if (!hist.length) { const li = document.createElement('li'); li.textContent = 'No episodes completed yet.'; log.append(li); }
+      else {
+        hist.slice().reverse().forEach(it => {
+          const li = document.createElement('li');
+          li.textContent = `Ep ${it.episode}: reward ${fmt(it.reward)}, grid ${fmt(it.grid_energy)} / base ${fmt(it.baseline_grid_energy)} Ws, peak ↓${fmt(it.peak_reduction_percent)}%, ${it.task_done ? '✓ target' : '✗ target'}`;
+          log.append(li);
+        });
+      }
+      const tbody = $('results-table'); tbody.replaceChildren();
+      if (!hist.length) {
+        const tr = tbody.insertRow(); const td = tr.insertCell(); td.colSpan = 6; td.className = 'empty-note'; td.textContent = 'No episodes completed yet.';
+      } else {
+        hist.slice().reverse().forEach(it => {
+          const tr = tbody.insertRow();
+          [it.episode, fmt(it.reward), `${fmt(it.grid_energy)} Ws`, `${fmt(it.baseline_grid_energy)} Ws`, `${fmt(it.peak_reduction_percent)}%`, it.task_done ? 'Target reached' : 'Not reached'].forEach((v, i) => {
+            const td = tr.insertCell();
+            if (i === 4) { td.textContent = v; td.className = 'hi'; }
+            else if (i === 5) { const sp = document.createElement('span'); sp.className = `tag${it.task_done ? '' : ' warn'}`; sp.textContent = v; td.append(sp); }
+            else td.textContent = v;
+          });
+        });
+      }
+    }
+
+    const alertMsg = s.error ? [s.error, 'error'] : !s.pybullet_available ? ['PyBullet unavailable. Use start_dashboard.bat to set up the project environment, then restart the dashboard.', 'warning'] : s.agent_grid_draw > 3 ? [`Teacher draw ${fmt(s.agent_grid_draw)} Ws exceeded 3.0 Ws peak threshold.`, 'warning'] : s.status==='running'&&s.stage==='baseline' ? ['Measuring constant-speed controller baseline.',''] : s.status==='running' ? [`Episode ${s.episode}: monitoring energy draw, buffer, and distance.`,''] : last ? [`${done}/${hist.length} tasks completed.`,''] : ['Ready. Start a short training run to collect KUKA simulation metrics.',''];
+    setAlert('alert-box', alertMsg[1], alertMsg[0]);
+    setAlert('det-alert', alertMsg[1], alertMsg[0]);
+  }
+
+  /* ── api ──────────────────────────────────────────────────── */
+  async function api(path, body) {
+    const r = await fetch(path, {
+      method: body===undefined ? 'GET' : 'POST',
+      headers: body===undefined ? {} : {'Content-Type':'application/json'},
+      body: body===undefined ? undefined : JSON.stringify(body)
+    });
+    const ct = r.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) throw new Error('Flask dashboard not connected. Start with: start_dashboard.bat');
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || `Server returned ${r.status}`);
+    return data;
+  }
+
+  let polling = false, delay = 800, timer;
+  function setDelay(d) { if (timer) clearInterval(timer); delay = d; timer = setInterval(tick, d); }
+  async function tick() {
+    if (polling) return; polling = true;
+    try {
+      render(await api('/api/status')); setDelay(800);
+    } catch(e) {
+      $('stxt').textContent = 'Server not connected';
+      ['sdot','mon-dot','model-dot'].forEach(id => { if ($(id)) $(id).className = 'dot error'; });
+      $('start-btn').disabled = true;
+      $('err-msg').hidden = false; $('err-msg').textContent = e.message;
+      for (const id of ['alert-box','det-alert']) setAlert(id, 'warning', 'Static preview. Start Flask dashboard to connect.');
+      setDelay(5000);
+    } finally { polling = false; }
+  }
+
+  async function post(path, body) {
+    try { render(await api(path, body)); } catch(e) { $('err-msg').hidden=false; $('err-msg').textContent=e.message; }
+  }
+
+  function exportCSV() {
+    if (!hist.length) { $('err-msg').hidden=false; $('err-msg').textContent='Complete an episode before exporting.'; goTo('monitoring'); return; }
+    const cols = ['episode','steps','reward','grid_energy_ws','baseline_grid_energy_ws','peak_grid_draw','baseline_peak_grid_draw','peak_reduction_percent','task_done','distance_m','buffer_used_ws','epsilon','mean_loss'];
+    const keys = ['episode','steps','reward','grid_energy','baseline_grid_energy','peak_grid_draw','baseline_peak_grid_draw','peak_reduction_percent','task_done','distance','buffer_used','epsilon','mean_loss'];
+    const rows = hist.map(ep => keys.map(k => `"${String(ep[k]??'').replaceAll('"','""')}"`).join(','));
+    const blob = new Blob([[cols.join(','),...rows].join('\r\n')], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download='training_history.csv'; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  }
+
+  $('start-btn').addEventListener('click', () => post('/api/train', {
+    episodes: Number($('ep-count').value),
+    resume_model: $('resume-model').checked
+  }));
+  $('upload-model-btn').addEventListener('click', async () => {
+    const file = $('model-file').files[0];
+    if (!file) {
+      $('model-upload-message').textContent = 'Choose a .pt or .pth teacher weights file first.';
+      return;
+    }
+    const form = new FormData();
+    form.append('model', file);
+    $('upload-model-btn').disabled = true;
+    try {
+      const response = await fetch('/api/model/upload', {method: 'POST', body: form});
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || `Server returned ${response.status}`);
+      $('model-upload-message').textContent = result.message;
+      $('model-file').value = '';
+      toast('Teacher weights uploaded', 'success');
+      render(await api('/api/status'));
+    } catch (error) {
+      $('model-upload-message').textContent = error.message;
+    } finally {
+      $('upload-model-btn').disabled = false;
+    }
+  });
+  $('pause-btn').addEventListener('click', () => post($('pause-btn').textContent.includes('Resume') ? '/api/resume' : '/api/pause', {}));
+  $('stop-btn').addEventListener('click',  () => post('/api/stop', {}));
+  $('reset-btn').addEventListener('click', async () => { try { render(await api('/api/reset', {})); } catch(e) { $('err-msg').hidden=false; $('err-msg').textContent=e.message; } });
+  $('spd-ctrl').addEventListener('input', () => { $('spd-val').textContent=$('spd-ctrl').value; post('/api/speed',{speed:Number($('spd-ctrl').value)}); });
+  ['export-btn','exp-det','exp-mgmt'].forEach(id => $(id)?.addEventListener('click', exportCSV));
+
+  window.addEventListener('resize', () => {
+    drawRobot(latestState?.joint_positions||[]);
+    drawGridChart('grid-chart', latestState?.series||[]);
+    drawGridChart('grid-chart-mon', latestState?.series||[]);
+    drawEpChart(hist);
+  });
+
+  drawRobot(); drawGridChart('grid-chart',[]); drawGridChart('grid-chart-mon',[]); drawEpChart([]);
+  setDelay(800);
+</script>
 </body>
 </html>

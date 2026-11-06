@@ -1,16 +1,24 @@
 """Flask dashboard for monitoring the KUKA energy-aware DQN project."""
 
 from importlib.util import find_spec
+import io
+import os
+import pickle
 from pathlib import Path
+import tempfile
 from threading import Event, Lock, Thread
 
 from flask import Flask, jsonify, request, send_from_directory
+from werkzeug.exceptions import RequestEntityTooLarge
 
+from src.config import HOST, PORT
 from src.training import train
 
 
 WEB_ROOT = Path(__file__).resolve().parent.parent / "web"
+MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / "teacher.pt"
 MAX_EPISODES_PER_RUN = 500
+MAX_MODEL_UPLOAD_BYTES = 16 * 1024 * 1024
 
 
 def pybullet_available():
@@ -66,7 +74,7 @@ class TrainingController:
                 "history": [dict(item) for item in self.state["history"]],
             }
 
-    def start(self, episodes):
+    def start(self, episodes, resume_model=False):
         with self.lock:
             if self.thread is not None and self.thread.is_alive():
                 return False
@@ -81,7 +89,9 @@ class TrainingController:
                 speed=self.speed,
                 run_id=run_id,
             )
-            self.thread = Thread(target=self._run, args=(episodes,), daemon=True)
+            self.thread = Thread(
+                target=self._run, args=(episodes, resume_model), daemon=True
+            )
             self.thread.start()
             return True
 
@@ -144,7 +154,7 @@ class TrainingController:
             self.state["history"].append(result)
             self.state["history"] = self.state["history"][-500:]
 
-    def _run(self, episodes):
+    def _run(self, episodes, resume_model=False):
         try:
             train(
                 episodes,
@@ -153,6 +163,7 @@ class TrainingController:
                 lambda: self.speed,
                 self._update_step,
                 self._record_episode,
+                resume_model=resume_model,
             )
             with self.lock:
                 self.state["status"] = "stopped" if self.stop_event.is_set() else "completed"
@@ -165,6 +176,12 @@ class TrainingController:
 
 controller = TrainingController()
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = MAX_MODEL_UPLOAD_BYTES
+
+
+@app.errorhandler(RequestEntityTooLarge)
+def upload_too_large(_error):
+    return jsonify(error="Model uploads must be 16 MB or smaller."), 413
 
 
 @app.get("/")
@@ -179,7 +196,16 @@ def dashboard_asset(filename):
 
 @app.get("/api/status")
 def training_status():
-    return jsonify(**controller.snapshot(), pybullet_available=pybullet_available())
+    return jsonify(
+        **controller.snapshot(),
+        pybullet_available=pybullet_available(),
+        model_available=MODEL_PATH.is_file(),
+    )
+
+
+@app.get("/api/health")
+def dashboard_health():
+    return jsonify(application="energy-consumption-dqn")
 
 
 @app.post("/api/train")
@@ -192,11 +218,68 @@ def start_training():
         return jsonify(error="Episodes must be a whole number."), 400
     if not 1 <= episodes <= MAX_EPISODES_PER_RUN:
         return jsonify(error=f"Choose between 1 and {MAX_EPISODES_PER_RUN} episodes."), 400
+    resume_model = payload.get("resume_model", False)
+    if not isinstance(resume_model, bool):
+        return jsonify(error="resume_model must be true or false."), 400
+    if resume_model and not MODEL_PATH.is_file():
+        return jsonify(error="No saved teacher model is available to continue from."), 409
     if not pybullet_available():
         return jsonify(error="PyBullet is unavailable. Follow Setup in README.md, then restart the dashboard."), 503
-    if not controller.start(episodes):
+    if not controller.start(episodes, resume_model=resume_model):
         return jsonify(error="A training run is already active."), 409
-    return jsonify(status="running", episodes_requested=episodes), 202
+    return jsonify(
+        status="running",
+        episodes_requested=episodes,
+        resumed_model=resume_model,
+    ), 202
+
+
+@app.post("/api/model/upload")
+def upload_model():
+    if controller.thread is not None and controller.thread.is_alive():
+        return jsonify(error="Stop training before uploading a model."), 409
+    uploaded_file = request.files.get("model")
+    if uploaded_file is None or not uploaded_file.filename:
+        return jsonify(error="Choose a .pt or .pth model file to upload."), 400
+    if Path(uploaded_file.filename).suffix.lower() not in {".pt", ".pth"}:
+        return jsonify(error="Only PyTorch .pt or .pth teacher weights are supported."), 400
+
+    model_bytes = uploaded_file.read(MAX_MODEL_UPLOAD_BYTES + 1)
+    if len(model_bytes) > MAX_MODEL_UPLOAD_BYTES:
+        return jsonify(error="Model uploads must be 16 MB or smaller."), 413
+    if not model_bytes:
+        return jsonify(error="The selected model file is empty."), 400
+
+    try:
+        import torch
+        from src.dqn_teacher import DQNAgent
+    except ImportError as error:
+        return jsonify(error=f"PyTorch is unavailable in this dashboard environment: {error}"), 503
+
+    try:
+        state_dict = torch.load(
+            io.BytesIO(model_bytes), map_location="cpu", weights_only=True
+        )
+        if not isinstance(state_dict, dict):
+            return jsonify(error="The file must contain a teacher state dictionary."), 400
+        agent = DQNAgent(state_dim=23, num_joints=6, device="cpu")
+        agent.q_network.load_state_dict(state_dict, strict=True)
+    except (OSError, RuntimeError, TypeError, ValueError, EOFError, pickle.UnpicklingError) as error:
+        return jsonify(error=f"Invalid teacher weights: {error}"), 400
+
+    MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            dir=MODEL_PATH.parent, prefix=".teacher-", suffix=".tmp", delete=False
+        ) as temporary_file:
+            temporary_path = Path(temporary_file.name)
+            temporary_file.write(model_bytes)
+        os.replace(temporary_path, MODEL_PATH)
+    finally:
+        if temporary_path is not None and temporary_path.exists():
+            temporary_path.unlink()
+    return jsonify(model_available=True, message="Teacher weights uploaded and validated.")
 
 
 @app.post("/api/stop")
@@ -238,9 +321,9 @@ def reset_dashboard():
 
 
 def main():
-    print("KUKA energy-aware DQN dashboard: http://127.0.0.1:5000")
+    print(f"KUKA energy-aware DQN dashboard: http://{HOST}:{PORT}")
     print("Stop this server with Ctrl+C.")
-    app.run(host="127.0.0.1", port=5000, threaded=True, use_reloader=False)
+    app.run(host=HOST, port=PORT, threaded=True, use_reloader=False)
 
 
 if __name__ == "__main__":

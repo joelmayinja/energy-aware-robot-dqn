@@ -100,43 +100,25 @@ The action values are **joint-velocity commands**, not torque commands. The curr
     └── index.html                 # Dashboard interface
 ```
 
-## Quick start
+## Quick start (Windows)
 
-### Windows with Git Bash
+1. Install **Python 3.10** and make sure the Python launcher (`py`) is available. On Windows, PyBullet installation requires **Visual Studio Build Tools** with the **Desktop development with C++** workload (MSVC and a Windows SDK).
+2. Open the `Energy_consumption_DQN` folder and double-click **`start_dashboard.bat`**.
+3. On first run, the launcher creates `.venv310` and installs the project requirements. It opens the dashboard at **http://127.0.0.1:5000** when ready.
+4. Choose **1–3 episodes** for an initial training check. Keep the launcher window open; press **Ctrl+C** there to stop the server.
 
-The project targets **Python 3.10**. Install Python 3.10 first. If PyBullet needs to compile from source on your Windows setup, install Visual Studio Build Tools with **Desktop development with C++**, an MSVC v14+ compiler, and a Windows SDK.
-
-From Git Bash:
-
-```bash
-cd /c/Users/JOEL/Desktop/DQN/Energy_consumption_DQN
-py -3.10 -m venv .venv310
-source .venv310/Scripts/activate
-python --version
-python -m pip install --upgrade pip setuptools wheel
-python -m pip install -r requirements.txt
-```
-
-Confirm `python --version` prints Python 3.10 before installing. If installation stops at PyBullet with a missing Microsoft C++ compiler, finish installing the C++ Build Tools, reopen Git Bash, reactivate the environment, and retry the requirements command.
-
-### Start the dashboard
-
-```bash
-python -m src.dashboard
-```
-
-Open **http://127.0.0.1:5000**. Start with **1–3 episodes** to verify the workflow before attempting a larger experiment. Keep the terminal open while using the app; press **Ctrl+C** to stop the server.
+The dashboard always uses `127.0.0.1:5000`. Starting the launcher again opens the existing project dashboard instead of starting another server. If another application owns that port, startup reports the conflict; it does not switch ports. If the launcher reports missing C++ Build Tools, install the workload above and run it again. If Python 3.10 is missing, install Python 3.10 and retry.
 
 The dashboard offers:
 
 - **Overview** — progress cards and episode-energy charts.
 - **Live monitoring** — training controls, live grid draw, energy buffer, and arm schematic.
 - **Data detection** — simulation signals, threshold alerts, and completed episode results.
-- **Model management** — teacher settings and the student/edge research roadmap.
+- **Model management** — upload a compatible PyTorch teacher `.pt`/`.pth` state dictionary and optionally initialize training from it, along with teacher settings and the student/edge research roadmap.
 
-> Opening `web/index.html` or running Python's static server shows only a page preview. It does **not** provide the Flask API or run training.
+> Opening `web/index.html` or running Python's static server shows only a page preview. It does **not** provide the Flask API or run training. Training requires PyBullet; the launcher installs it in the project's Python 3.10 environment.
 
-### Static design preview only
+### Static design preview only (no training)
 
 If dependencies are not installed yet, you can preview the HTML layout without training:
 
@@ -154,10 +136,10 @@ This is **industrial energy-consumption data, not robot telemetry**. It supports
 
 ## Tests
 
-With the project's Python environment active:
+From the project folder:
 
 ```bash
-python -m unittest discover -s tests -v
+.venv310\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
 Tests cover dashboard endpoints, DQN action selection, environment behavior, and training updates. A passing test suite does not establish that the agent has learned an effective energy-saving policy.
