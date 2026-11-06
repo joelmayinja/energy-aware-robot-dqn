@@ -54,6 +54,14 @@ class DashboardServerTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json["status"], "idle")
 
+    def test_backend_health_endpoint_identifies_the_application(self):
+        response = self.client.get("/api/health")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json, {"application": "energy-consumption-dqn"}
+        )
+
     def test_frontend_origin_can_call_api_and_preflight_posts(self):
         response = self.client.get(
             "/api/status", headers={"Origin": "http://127.0.0.1:8000"}
