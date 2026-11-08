@@ -90,7 +90,8 @@ The action values are **joint-velocity commands**, not torque commands. The curr
 │   └── steel_data.csv
 ├── src/
 │   ├── backend.py                 # Flask API and training controller
-│   ├── launcher.py                # Starts frontend and backend
+│   ├── dashboard.py               # Compatibility entry point for Flask/Codespaces
+│   ├── launcher.py                # Starts the complete dashboard application
 │   ├── dqn_teacher.py             # DQN agent and replay buffer
 │   ├── environment.py             # Gymnasium/PyBullet robot environment
 │   └── training.py                # Baseline and teacher training loop
@@ -98,7 +99,7 @@ The action values are **joint-velocity commands**, not torque commands. The curr
 ├── tinkercad/                     # Arduino sketch and circuit concept
 └── frontend/
     ├── assets/                    # Frontend images
-    └── web.html                   # Standalone dashboard frontend
+    └── web.html                   # Dashboard frontend and theme toggle
 ```
 
 ## Quick start (Windows)
@@ -112,10 +113,22 @@ The action values are **joint-velocity commands**, not torque commands. The curr
    ```
 
    You can also double-click `start_dashboard.bat` in File Explorer.
-3. On first run, the launcher creates a small `.venv310` environment and installs Flask only. It starts the frontend and backend separately, then opens **http://127.0.0.1:8000**.
-4. Keep the terminal open while using the dashboard. Press **Ctrl+C** there to stop both local servers.
+3. On first run, the launcher creates a small `.venv310` environment and installs Flask only. It starts the dashboard and opens **http://127.0.0.1:5000**.
+4. Keep the terminal open while using the dashboard. Press **Ctrl+C** there to stop the server.
 
-The frontend is served at `127.0.0.1:8000`; its API runs at `127.0.0.1:5000`. The launcher starts both for you. Neither Codespaces nor Visual Studio Build Tools is needed to view the dashboard. The frontend and backend communicate across these local ports through a restricted CORS configuration.
+The Flask application serves the frontend, assets, training API, and model controls together at `127.0.0.1:5000`. This is one project and one running web application; the frontend and backend remain in separate files so each has a clear responsibility. The dashboard opens in the Codespaces-inspired dark theme and includes a light/dark toggle. Neither Codespaces nor Visual Studio Build Tools is needed to view it.
+
+### Start in Codespaces
+
+From the project root, run:
+
+```bash
+.venv/bin/python -m flask --app src.dashboard:app run --host 0.0.0.0 --port 5000 --no-reload
+```
+
+Open port 5000 through the VS Code **Ports** tab. The `src.dashboard:app`
+compatibility import serves the same Flask app as `src.backend:app`; it is not a
+second backend.
 
 The dashboard offers:
 
@@ -160,9 +173,9 @@ Tests cover dashboard endpoints, DQN action selection, environment behavior, and
 2. Press **Ctrl+P** and open `frontend/web.html`.
 3. Edit the HTML text and navigation, or adjust the CSS in its `<style>` block.
 4. Put your own JPG or PNG in `frontend/assets/`, then reference it as `/assets/your-image.jpg`.
-5. Refresh the browser. The launcher serves frontend files from the static frontend server and sends API requests to the Flask backend.
+5. Refresh the browser. Flask serves the frontend and API together on port 5000.
 
-The frontend files are in [frontend/](frontend/); the backend API is in [src/backend.py](src/backend.py). The launcher is [src/launcher.py](src/launcher.py), and the frontend reads the backend on port 5000.
+The frontend files are in [frontend/](frontend/); the backend API is in [src/backend.py](src/backend.py). The launcher is [src/launcher.py](src/launcher.py).
 
 ## Research and presentation
 
