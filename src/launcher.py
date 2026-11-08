@@ -1,13 +1,10 @@
-"""Prepare the lightweight dashboard environment and launch both local services."""
+"""Prepare the dashboard environment and launch the combined web application."""
 
 import json
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import socket
 import subprocess
 import sys
-from threading import Thread
-import time
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 import webbrowser
@@ -15,22 +12,11 @@ import webbrowser
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.config import FRONTEND_PORT, FRONTEND_URL, HOST, PORT, URL
+from src.config import HOST, PORT, URL
 
 
 CONDA_PYTHON = PROJECT_ROOT / ".conda-training" / "python.exe"
 VENV_PYTHON = PROJECT_ROOT / ".venv310" / "Scripts" / "python.exe"
-FRONTEND_ROOT = PROJECT_ROOT / "frontend"
-
-
-class FrontendRequestHandler(SimpleHTTPRequestHandler):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=str(FRONTEND_ROOT), **kwargs)
-
-    def do_GET(self):
-        if self.path.split("?", 1)[0] == "/":
-            self.path = "/web.html"
-        super().do_GET()
 
 
 def _runtime_python():
@@ -46,16 +32,15 @@ def _port_is_occupied(port):
 
 
 def _backend_at_port():
-    """Return whether the API port serves this backend, is occupied, or is free."""
+    """Return whether the application API is available, the port is occupied, or free."""
     try:
         with urlopen(f"{URL}/api/health", timeout=1) as response:
             data = json.loads(response.read())
-        return (
-            "dashboard"
-            if isinstance(data, dict)
-            and data.get("application") == "energy-consumption-dqn"
-            else "occupied"
-        )
+        if not isinstance(data, dict) or data.get("application") != "energy-consumption-dqn":
+            return "occupied"
+        with urlopen(URL, timeout=1) as response:
+            page = response.read(4096).decode("utf-8", errors="replace")
+        return "dashboard" if "<title>Wallie | Energy Intelligence</title>" in page else "legacy_dashboard"
     except HTTPError as error:
         if error.code == 404:
             try:
@@ -74,20 +59,6 @@ def _backend_at_port():
         return "occupied" if _port_is_occupied(PORT) else "free"
 
 
-def _frontend_at_port():
-    """Return whether the frontend port serves the project page or is occupied."""
-    try:
-        with urlopen(FRONTEND_URL, timeout=1) as response:
-            page = response.read(4096).decode("utf-8", errors="replace")
-        return (
-            "frontend"
-            if "<title>Wallie | Energy Intelligence</title>" in page
-            else "occupied"
-        )
-    except (HTTPError, URLError, TimeoutError, OSError):
-        return "occupied" if _port_is_occupied(FRONTEND_PORT) else "free"
-
-
 def _ensure_runtime_environment():
     using_conda_environment = CONDA_PYTHON.is_file()
     if not using_conda_environment and sys.version_info[:2] != (3, 10):
@@ -104,7 +75,11 @@ def _ensure_runtime_environment():
 
     runtime_python = _runtime_python()
     version = subprocess.run(
-        [str(runtime_python), "-c", "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"],
+        [
+            str(runtime_python),
+            "-c",
+            "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')",
+        ],
         cwd=PROJECT_ROOT,
         capture_output=True,
         text=True,
@@ -117,55 +92,48 @@ def _ensure_runtime_environment():
         )
 
     flask_check = subprocess.run(
-        [str(runtime_python), "-c", "import importlib.util; raise SystemExit(importlib.util.find_spec('flask') is None)"],
+        [
+            str(runtime_python),
+            "-c",
+            "import importlib.util; raise SystemExit(importlib.util.find_spec('flask') is None)",
+        ],
         cwd=PROJECT_ROOT,
         check=False,
     )
     if flask_check.returncode != 0:
         print("Installing the lightweight dashboard dependency (Flask)...")
         subprocess.run(
-            [str(runtime_python), "-m", "pip", "install", "-r", "requirements-dashboard.txt"],
+            [
+                str(runtime_python),
+                "-m",
+                "pip",
+                "install",
+                "-r",
+                "requirements-dashboard.txt",
+            ],
             cwd=PROJECT_ROOT,
             check=True,
         )
     return runtime_python
 
 
-def _wait_for_service(threads, service_check, description):
-    deadline = time.monotonic() + 30
-    while time.monotonic() < deadline:
-        if not all(thread.is_alive() for thread in threads):
-            raise RuntimeError(f"A server stopped while starting the {description}.")
-        if service_check():
-            return
-        time.sleep(0.25)
-    raise RuntimeError(f"{description} did not become ready within 30 seconds.")
-
-
 def main():
-    backend_state = _backend_at_port()
-    frontend_state = _frontend_at_port()
-    if backend_state == "legacy_dashboard":
+    application_state = _backend_at_port()
+    if application_state == "legacy_dashboard":
         print(
-            f"An older combined dashboard is running at {URL}. "
+            f"An older dashboard is running at {URL}. "
             "Stop its server window with Ctrl+C, then run start_dashboard.bat again."
         )
         return 2
-    if backend_state == "occupied":
+    if application_state == "occupied":
         print(
             f"Port {PORT} is being used by another application. "
-            "Close it and retry; the backend uses this fixed port."
+            "Close it and retry; the dashboard uses this fixed port."
         )
         return 2
-    if frontend_state == "occupied":
-        print(
-            f"Port {FRONTEND_PORT} is being used by another application. "
-            "Close it and retry; the frontend uses this fixed port."
-        )
-        return 2
-    if backend_state == "dashboard" and frontend_state == "frontend":
-        print(f"Dashboard is already running at {FRONTEND_URL}; opening it in your browser.")
-        webbrowser.open(FRONTEND_URL)
+    if application_state == "dashboard":
+        print(f"Dashboard is already running at {URL}; opening it in your browser.")
+        webbrowser.open(URL)
         return 0
 
     try:
@@ -184,70 +152,21 @@ def main():
         except KeyboardInterrupt:
             return 0
 
-    servers = []
-    threads = []
     try:
-        from werkzeug.serving import make_server
-
         from src.backend import app
 
-        if backend_state == "free":
-            servers.append(make_server(HOST, PORT, app, threaded=True))
-
-        if frontend_state == "free":
-            frontend = ThreadingHTTPServer(
-                (HOST, FRONTEND_PORT), FrontendRequestHandler
-            )
-            frontend.daemon_threads = True
-            servers.append(frontend)
-
-        threads = [
-            Thread(
-                target=server.serve_forever,
-                name=f"dashboard-server-{index}",
-                daemon=True,
-            )
-            for index, server in enumerate(servers)
-        ]
-        if backend_state == "free":
-            print(f"Starting the backend API at {URL}...")
-        if frontend_state == "free":
-            print(f"Starting the frontend at {FRONTEND_URL}...")
-        for thread in threads:
-            thread.start()
-
-        _wait_for_service(
-            threads,
-            lambda: backend_state != "free" or _backend_at_port() == "dashboard",
-            "backend API",
-        )
-        _wait_for_service(
-            threads,
-            lambda: frontend_state != "free" or _frontend_at_port() == "frontend",
-            "frontend",
-        )
-
-        print(
-            f"Frontend: {FRONTEND_URL}\n"
-            f"Backend API: {URL}\n"
-            "Keep this window open; press Ctrl+C to stop both services."
-        )
-        webbrowser.open(FRONTEND_URL)
-        while all(thread.is_alive() for thread in threads):
-            time.sleep(0.5)
-        print("A dashboard server stopped unexpectedly.")
-        return 1
+        print(f"Dashboard: {URL}")
+        print("Frontend and training API are served by this one application.")
+        print("Stop the dashboard with Ctrl+C.")
+        webbrowser.open(URL)
+        app.run(host=HOST, port=PORT, threaded=True, use_reloader=False)
     except KeyboardInterrupt:
-        print("\nStopping the frontend and backend...")
+        print("\nStopping the dashboard...")
         return 0
-    except (OSError, RuntimeError) as error:
+    except OSError as error:
         print(f"Dashboard startup failed: {error}")
         return 1
-    finally:
-        for server, thread in reversed(list(zip(servers, threads))):
-            if thread.is_alive():
-                server.shutdown()
-            server.server_close()
+    return 0
 
 
 if __name__ == "__main__":

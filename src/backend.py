@@ -8,13 +8,14 @@ from pathlib import Path
 import tempfile
 from threading import Event, Lock, Thread
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from werkzeug.exceptions import RequestEntityTooLarge
 
-from src.config import FRONTEND_ORIGINS, HOST, PORT
+from src.config import HOST, PORT
 from src.training import train
 
 
+FRONTEND_ROOT = Path(__file__).resolve().parent.parent / "frontend"
 MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / "teacher.pt"
 MAX_EPISODES_PER_RUN = 500
 MAX_MODEL_UPLOAD_BYTES = 16 * 1024 * 1024
@@ -178,30 +179,19 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = MAX_MODEL_UPLOAD_BYTES
 
 
-@app.after_request
-def allow_frontend_origin(response):
-    origin = request.headers.get("Origin")
-    if origin in FRONTEND_ORIGINS:
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-        response.headers["Access-Control-Max-Age"] = "600"
-        response.vary.add("Origin")
-    return response
-
-
 @app.errorhandler(RequestEntityTooLarge)
 def upload_too_large(_error):
     return jsonify(error="Model uploads must be 16 MB or smaller."), 413
 
 
 @app.get("/")
-def backend_info():
-    return jsonify(
-        application="energy-consumption-dqn",
-        service="api",
-        health=f"http://{HOST}:{PORT}/api/health",
-    )
+def frontend():
+    return send_from_directory(FRONTEND_ROOT, "web.html")
+
+
+@app.get("/assets/<path:filename>")
+def frontend_asset(filename):
+    return send_from_directory(FRONTEND_ROOT / "assets", filename)
 
 
 @app.get("/api/status")
