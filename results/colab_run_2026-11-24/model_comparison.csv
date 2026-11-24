@@ -1,0 +1,3 @@
+Model,Parameters,Compression_Ratio
+Teacher (256x256),94809,1.0
+Student (64x64),11481,8.257904363731383

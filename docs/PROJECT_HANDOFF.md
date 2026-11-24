@@ -1,6 +1,6 @@
 # Energy-Aware Robot DQN — Project Handoff
 
-**Prepared:** 2026-11-08
+**Prepared:** 2026-11-24
 **Repository:** `joelmayinja/energy-aware-robot-dqn`
 **Local checkout:** `C:\Users\JOEL\Desktop\DQN\Energy_consumption_DQN`
 
@@ -33,6 +33,10 @@ performance.
 - The dashboard has a dark default theme based on the user-provided Codespaces
   screenshot, a persistent light/dark toggle, and theme-aware charts and robot
   schematic.
+- Training now runs the inverse-kinematics baseline and teacher under the same
+  buffer model. Peak savings are considered valid only when both reach the
+  target; the dashboard hides invalid savings and excludes those episodes from
+  the energy-comparison chart.
 - Dashboard status now reports backend connectivity separately from PyBullet
   availability, so a working API is not incorrectly labeled disconnected just
   because the simulator dependency is missing.
@@ -55,16 +59,16 @@ performance.
   .\.venv\Scripts\python.exe -m unittest discover -s tests -v
   ```
 
-- Last run: **26 passed, 1 skipped**. The skipped suite requires PyBullet.
+- Last run in `.conda-training`: **28 passed** (including PyBullet environment
+  tests).
 - Python syntax checks and `git diff --check` passed.
 - The combined dashboard and API were opened in a browser. The theme toggle and
   Overview, Live monitoring, Data detection, and Model management pages were
   checked.
-- Local `.venv` is Python 3.13.1 and has Flask, NumPy, PyTorch, and Gymnasium,
-  but not PyBullet. Local `.venv310` is Python 3.10.11 and has Flask, but lacks
-  NumPy, PyTorch, Gymnasium, and PyBullet. The Windows launcher expects Python
-  3.10 or the optional `.conda-training` environment. Conda is not currently
-  available on PATH.
+- The `.conda-training` environment is present and contains the training
+  dependencies needed for local Windows simulation. The `conda` command itself
+  is not available on PATH. The separate `.venv` and `.venv310` environments
+  remain dashboard-only or incomplete for simulation training.
 - The user previously reported a Codespaces Python 3.10 environment with
   CPU-only PyTorch, Flask, and PyBullet. This was not independently inspected
   from the local checkout; confirm the latest files and dependency state in
@@ -74,19 +78,31 @@ performance.
 
 - The dashboard/backend can run without PyBullet, but the training endpoint
   correctly rejects a training request when PyBullet is unavailable.
-- A prior Codespaces run reportedly completed three episodes and 400 steps,
-  with `task_done=false` for all three. Those episodes do **not** validate
-  learned task performance or energy savings.
-- Local model weights, training history, and replay artifacts were previously
-  backed up under ignored paths. Check the current Codespace and local ignored
-  artifacts before running training or overwriting outputs.
-- Current `src/training.py` saves teacher weights and replay states/actions,
-  but not the optimizer or full replay-buffer checkpoint. A later call with
-  `resume_model=true` loads weights into a newly initialized agent; it does not
-  continue the exact optimizer/replay state. A single continuous training run
-  is therefore preferable until full checkpoint/resume support is implemented.
-- Training and its results have not been newly validated in the local
-  environment because PyBullet is absent.
+- Latest submitted Colab artifact: the selected IK-assisted DQN reached 44/50
+  held-out targets (88%); the fixed-speed IK baseline reached 45/50 (90%) on
+  the same seeds. The student reached 6/50 (12%).
+- A paired re-evaluation of the teacher and IK baseline on successful matched
+  cases found 10.8% higher mean grid energy for the teacher and approximately
+  zero mean peak reduction. The project has a target-reaching prototype, but
+  this run does not demonstrate energy savings.
+- Online fine-tuning recorded only 3/500 successful training episodes. The
+  final selected warm-start checkpoint was evaluated greedily on separate
+  held-out seeds; keep these measures separate in plots and presentations.
+- `train_colab.ipynb` and `src/training.py` now collect IK demonstrations,
+  behavior-clone the DQN warm start, retain an imitation loss during DQN
+  fine-tuning, and choose between warm-start/fine-tuned weights using a
+  held-out validation set. Local training additionally writes
+  `evaluation_summary.csv` and `paired_evaluation.csv` against matched IK
+  baseline seeds.
+- The student model and ONNX export are artifacts only. With 6/50 target
+  completion, do not demonstrate the student as a capable controller or claim
+  that it retains teacher performance.
+- The generated steel-industry CSV is not used to train this robot policy.
+  Targets and demonstration state/action data come from the simulator; finding
+  another external dataset is not the next fix.
+- The simplified buffer model estimates positive mechanical work as use and
+  negative braking work as recoverable energy. This is simulation accounting,
+  not physical motor/battery validation.
 
 ## Recommended next steps
 
@@ -98,22 +114,19 @@ performance.
    NumPy, PyTorch (CPU is sufficient), Gymnasium, and PyBullet imports. Start
    the app with the command above and confirm `/`, `/api/health`, and
    `/api/status` work through forwarded port 5000.
-3. **Run a short simulation smoke test:** use a small episode count to confirm
-   that the baseline and DQN phases complete, metrics update, and files are
-   written. Do not interpret a run as successful solely because an episode
-   finished; inspect its `task_done` values.
-4. **Review learning quality:** train continuously for a planned number of
-   episodes, review reward, target completion, distance, and losses, and
-   compare energy only across successful tasks. Repeat with multiple seeds and
-   report variability before making an energy-saving claim.
+3. **Use the selected teacher for the simulation prototype:** keep the IK
+   baseline available for comparison and show the held-out completion rates.
+   Label it IK-assisted DQN, not a pure end-to-end DQN policy.
+4. **Continue energy research:** lower energy per completed target while
+   keeping completion near the 88% held-out result. Compare policies on the
+   same seeds and calculate energy only where both complete.
 5. **Improve resumability before relying on interrupted runs:** consider
    checkpointing optimizer, replay buffer, episode/global-step counters, and
    random-number generator states. Verify resume behavior with a save/reload
    test.
-6. **Proceed to the next research phase only after teacher evaluation:** once a
-   repeatable teacher baseline is established, implement and evaluate student
-   distillation. ONNX/edge execution, grid-fault scenarios, and Raspberry Pi
-   latency are future work, not completed features.
+6. **Keep student/edge work experimental:** improve student completion before
+   considering ONNX deployment or Raspberry Pi latency. Grid-fault scenarios
+   and physical-robot evaluation remain future work.
 7. **Keep local and GitHub history explicit:** the handoff commits are local.
    Review the full outgoing diff and branch divergence before pushing or
    opening a pull request.

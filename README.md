@@ -1,7 +1,7 @@
 <div align="center">
   <img src="docs/project-banner.svg" alt="Energy-aware robot control project banner" width="100%">
 
-  <h1>Energy-Aware Robot Control with Lightweight Deep Q-Learning</h1>
+  <h1>IK-Assisted Energy-Aware Robot Control with Deep Q-Learning</h1>
 
   <p>
     <strong>A research prototype exploring energy-aware control of a simulated industrial robot.</strong><br>
@@ -29,22 +29,22 @@
 
 ## Project overview
 
-Industrial robots can draw substantial energy during repeated movement. This project investigates whether a Deep Q-Network (DQN) can learn to control a simulated robot arm with energy use in mind, while maintaining task performance. The longer-term research plan also studies model distillation for low-cost edge hardware and operation under simulated grid instability.
+Industrial robots draw energy during repeated movement. This project uses inverse-kinematics (IK) demonstrations to warm-start a Deep Q-Network (DQN), then fine-tunes the policy in a simulated KUKA iiwa environment. The current prototype demonstrates target reaching; energy reduction remains an open result. Model distillation and edge deployment are exploratory stages.
 
 The work is motivated by the energy and computing constraints that can affect manufacturing SMEs in Uganda. It is an academic research prototype—not a deployed factory controller.
 
 ### Research questions
 
-1. How much energy per completed task can a DQN teacher save against a constant-speed controller in simulation?
+1. Can an IK-assisted DQN preserve target completion while reducing energy against a fixed-speed IK controller?
 2. How much teacher performance can a smaller distilled student retain, and can it run on a Raspberry Pi 4?
 3. How does the controller perform under simulated brownouts, outages, and solar surplus?
 
 | Stage | Purpose | Status |
 |---|---|---|
 | Industrial energy data | Explore steel-industry load patterns and motivate task scenarios. | Dataset and exploratory notebook are present; the CSV is not connected to DQN training. |
-| Robot simulation | Model a KUKA iiwa arm and compare energy-related behavior. | PyBullet/Gymnasium environment code is present; live execution still needs verification. |
-| Teacher DQN | Learn a discrete joint-velocity policy and compare it with a fixed-speed baseline. | Training pipeline is implemented; verified training results are not yet reported. |
-| Student and edge deployment | Distill the teacher, export ONNX, and evaluate on Raspberry Pi 4. | Planned research work; not implemented or measured yet. |
+| Robot simulation | Model a KUKA iiwa arm and compare energy-related behavior. | PyBullet/Gymnasium simulation is operational. |
+| IK-assisted DQN | Warm-start from IK demonstrations, fine-tune with DQN, and compare against IK. | Latest held-out evaluation: teacher 44/50 completions; IK baseline 45/50. No energy savings demonstrated. |
+| Student and edge deployment | Distill the teacher, export ONNX, and evaluate on Raspberry Pi 4. | Student artifact exports, but latest evaluation reached 6/50 targets (12%); not ready for deployment. |
 | Physical-facing demonstration | Communicate the energy-buffer concept with an Arduino/Tinkercad mock-up. | Circuit illustration and simple threshold-based sketch are present; this is not the DQN or industrial robot. |
 
 > **Research integrity:** the proposal's 20% energy-saving, 85% student-retention, and 100 ms Raspberry Pi latency values are targets to test—not achieved results. Dashboard values come from simulation, not physical robot measurements.
@@ -54,9 +54,13 @@ The work is motivated by the energy and computing constraints that can affect ma
 - Research proposal (Chapters 1–3) and a systematic literature review draft establish the motivation, research gap, and planned evaluation.
 - The literature review screened 195 unique records and included six primary studies; it identifies a gap at the intersection of energy-aware DRL, policy distillation, and low-cost deployment.
 - The repository includes a steel-industry CSV with **35,040 quarter-hourly observations from 2018**, plus a notebook for load-pattern exploration.
-- The simulation source defines a 23-value observation, a 400-step episode, light/heavy phases, and an energy-buffer model.
+- The simulation uses a 23-value observation, a 200-step episode, light/heavy phases, regenerative buffer charging, and an IK-guided DQN policy warm-start.
 - The dashboard provides Overview, Live monitoring, Data detection, and Model management pages.
-- **Environment setup is still a blocker on Windows:** the latest reported PyBullet install stopped because Microsoft C++ Build Tools were missing. The live Flask training flow and model performance therefore remain unverified.
+- **Latest Colab prototype result:** on the same 50 held-out seeds, the selected IK-assisted DQN reached 44/50 targets (88%) and the fixed-speed IK baseline reached 45/50 (90%). On the 44 matched successful cases, the teacher used 10.8% more energy on average; peak reduction was approximately zero. Target reaching is demonstrated, energy reduction is not.
+- **Distillation limitation:** the student reached 6/50 targets (12%). The student is not suitable for the prototype demonstration or edge deployment yet.
+- **Training-history caveat:** online exploratory training completed 3/500 targets, while held-out greedy evaluation of the selected warm-start checkpoint completed 44/50. The online learning curve and selected-checkpoint test measure different policies and must be labeled separately.
+- **Dashboard comparisons are gated:** energy savings are reported only when both policies complete the same seeded target. Use `evaluation_summary.csv` and `paired_evaluation.csv` for final comparisons, not energy totals from failed episodes.
+- The submitted Colab ZIP and a matched-seed re-evaluation are preserved under [`results/colab_run_2026-11-24/`](results/colab_run_2026-11-24/). The selected teacher checkpoint is installed at `models/teacher.pt`; the prior local checkpoint is retained as `models/teacher_pre_ik_assisted.pt`.
 
 ## Technical snapshot
 
@@ -64,13 +68,13 @@ The work is motivated by the energy and computing constraints that can affect ma
 |---|---|
 | Robot | PyBullet KUKA iiwa model: seven physical joints, six controlled, final wrist joint locked |
 | Observation | 23 values: joint state, end-effector and target position, phase, buffer, grid draw, distance, and episode progress |
-| Actions | 25 discrete choices: zero movement plus four non-zero velocity levels for each of six joints |
-| Teacher network | PyTorch Q-network with two 256-unit hidden layers and a replay buffer |
-| Simulation | 400-step episodes with seeded light/heavy targets and a simplified 50 Ws energy buffer |
-| Current comparison | Fixed-speed inverse-kinematics baseline versus teacher policy |
+| Actions | 89 discrete choices: zero movement, single-joint velocity commands, and 64 coordinated six-joint directions |
+| Teacher network | PyTorch Q-network with two 256-unit hidden layers, IK demonstration warm-start, and DQN fine-tuning |
+| Simulation | 200-step episodes with seeded light/heavy targets and a simplified 50 Ws regenerative buffer |
+| Current comparison | IK-assisted DQN versus fixed-speed IK on matched held-out seeds |
 | Dashboard | Flask API and responsive HTML dashboard |
 
-The action values are **joint-velocity commands**, not torque commands. The current simulated energy estimate sums `|torque × angular velocity|` over the controlled joints. The steel-industry CSV is exploratory context; it contains no robot joint telemetry and is not currently used by the training loop.
+The action values are **joint-velocity commands**, not torque commands. The simulator estimates positive joint work as energy use and negative work during braking as recoverable energy, with an 80% buffer charging efficiency. This simplified model is not a physical battery or motor validation. The steel-industry CSV is exploratory context; it contains no robot joint telemetry and is not used by training.
 
 > **Method alignment:** some proposal details—such as the richer motor-loss model, additional baselines, grid-state scenarios, student architecture, and Raspberry Pi evaluation—are not yet present in the current runner. See the [progress guide](docs/Progress_and_Presentation_Guide.pdf) for a detailed implementation-versus-plan checklist.
 
