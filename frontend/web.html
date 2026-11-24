@@ -504,7 +504,7 @@
         <div class="hero-copy">
           <div class="pill"><span class="dot running"></span> Intelligent energy monitoring</div>
           <h2>Make every movement count.</h2>
-          <p>Train an energy-aware robot controller and compare its live grid draw with a fixed-speed baseline in a simulated KUKA environment.</p>
+          <p>Train an IK-assisted DQN from simulated expert demonstrations, monitor target completion, and compare energy only on matched successful tasks.</p>
           <button class="btn" data-go="management">Explore your model →</button>
         </div>
         <svg class="hero-art" viewBox="0 0 460 260" fill="none" aria-hidden="true">
@@ -553,12 +553,12 @@
         <article class="metric">
           <div class="metric-top"><span class="mlabel">Peak reduction</span><span class="mico">↘</span></div>
           <div class="mval" id="peak-val">—</div>
-          <div class="munit">Teacher vs baseline</div>
+          <div class="munit">Only when both reach target</div>
         </article>
         <article class="metric">
-          <div class="metric-top"><span class="mlabel">Task completion</span><span class="mico">✓</span></div>
+          <div class="metric-top"><span class="mlabel">Online training completion</span><span class="mico">✓</span></div>
           <div class="mval" id="compl-val">—</div>
-          <div class="munit">Completed targets across episodes</div>
+          <div class="munit">Exploratory training; held-out result appears below</div>
         </article>
       </div>
 
@@ -567,7 +567,7 @@
           <div class="panel-head">
             <div><h3>Grid performance</h3><p class="panel-sub">Step-by-step energy draw this episode</p></div>
             <div class="legend">
-              <span><span class="leg-dot" style="background:var(--teal)"></span>Teacher DQN</span>
+              <span><span class="leg-dot" style="background:var(--teal)"></span>IK-assisted DQN</span>
               <span><span class="leg-dot" style="background:var(--orange)"></span>Baseline</span>
             </div>
           </div>
@@ -588,7 +588,7 @@
       <div class="grid2 eq">
         <article class="panel">
           <div class="panel-head">
-            <div><h3>Episode energy comparison</h3><p class="panel-sub">Total grid energy — lower is better</p></div>
+            <div><h3>Episode energy comparison</h3><p class="panel-sub">Only episodes where both controllers reach the target</p></div>
             <span class="tag">Simulation</span>
           </div>
           <canvas id="ep-chart"></canvas>
@@ -656,7 +656,7 @@
       <div class="grid2">
         <article class="panel">
           <div class="panel-head">
-            <div><h3>Live energy draw</h3><p class="panel-sub">Teacher DQN vs constant-speed baseline</p></div>
+            <div><h3>Live energy draw</h3><p class="panel-sub">IK-assisted DQN vs constant-speed IK baseline</p></div>
             <span class="tag">Peak limit 3.0 Ws</span>
           </div>
           <canvas id="grid-chart-mon"></canvas>
@@ -702,12 +702,12 @@
 
       <article class="panel">
         <div class="panel-head">
-          <div><h3>Completed episode results</h3><p class="panel-sub">Energy, completion, and peak reduction by run</p></div>
+          <div><h3>Completed episode results</h3><p class="panel-sub">Peak savings are reported only when both controllers reach the target.</p></div>
           <button id="exp-det" class="btn">↓ Export CSV</button>
         </div>
         <div class="twrap">
           <table class="tbl">
-            <thead><tr><th>Episode</th><th>Reward</th><th>Teacher energy</th><th>Baseline energy</th><th>Peak reduction</th><th>Target</th></tr></thead>
+            <thead><tr><th>Episode</th><th>Reward</th><th>Teacher energy</th><th>Baseline energy</th><th>Peak reduction</th><th>Target (teacher / baseline)</th></tr></thead>
             <tbody id="results-table"><tr><td colspan="6" class="empty-note">No episodes completed yet.</td></tr></tbody>
           </table>
         </div>
@@ -728,7 +728,7 @@
       <div class="phase-grid">
         <article class="phase-card active">
           <div class="phase-num">Phase 01 · In progress</div>
-          <h3>Teacher DQN</h3>
+          <h3>IK-assisted DQN teacher</h3>
           <p>Train and evaluate the PyTorch teacher policy in the simulated KUKA environment.</p>
         </article>
         <article class="phase-card">
@@ -745,18 +745,18 @@
 
       <div class="grid2 eq">
         <article class="panel">
-          <div class="panel-head"><div><h3>Teacher DQN configuration</h3><p class="panel-sub">Current research prototype settings</p></div><span class="tag">PyTorch</span></div>
+          <div class="panel-head"><div><h3>IK-assisted DQN configuration</h3><p class="panel-sub">Current research prototype settings</p></div><span class="tag">PyTorch</span></div>
           <div class="twrap">
             <table class="tbl">
               <tbody>
                 <tr><td>Observation space</td><td style="text-align:right;font-weight:700;color:var(--ink)">23 values</td></tr>
-                <tr><td>Discrete actions</td><td style="text-align:right;font-weight:700;color:var(--ink)">25</td></tr>
-                <tr><td>Q-network layers</td><td style="text-align:right;font-weight:700;color:var(--ink)">256 → 256 → 25</td></tr>
+                <tr><td>Discrete actions</td><td style="text-align:right;font-weight:700;color:var(--ink)">89</td></tr>
+                <tr><td>Q-network layers</td><td style="text-align:right;font-weight:700;color:var(--ink)">23 → 256 → 256 → 89</td></tr>
                 <tr><td>Replay buffer / batch</td><td style="text-align:right;font-weight:700;color:var(--ink)">10,000 / 64</td></tr>
                 <tr><td>Learning rate / γ</td><td style="text-align:right;font-weight:700;color:var(--ink)">0.001 / 0.99</td></tr>
-                <tr><td>Exploration schedule</td><td style="text-align:right;font-weight:700;color:var(--ink)">ε: 1.0 × 0.995 · min 0.01</td></tr>
-                <tr><td>Target network update</td><td style="text-align:right;font-weight:700;color:var(--ink)">Every 10 episodes</td></tr>
-                <tr><td>Episode phases</td><td style="text-align:right;font-weight:700;color:var(--ink)">Light 0–160 · Heavy 161–400</td></tr>
+                <tr><td>Exploration schedule</td><td style="text-align:right;font-weight:700;color:var(--ink)">ε: 0.10 × 0.995 · min 0.01</td></tr>
+                <tr><td>Target network update</td><td style="text-align:right;font-weight:700;color:var(--ink)">Every 5 episodes</td></tr>
+                <tr><td>Episode phases</td><td style="text-align:right;font-weight:700;color:var(--ink)">Light 0–49 · Heavy 50–200</td></tr>
               </tbody>
             </table>
           </div>
@@ -771,7 +771,7 @@
         <div class="panel-head">
           <div>
             <h3>Upload teacher weights</h3>
-            <p class="panel-sub">Use a compatible PyTorch state dictionary for this 23-input, 25-action teacher.</p>
+            <p class="panel-sub">Use a compatible PyTorch state dictionary for this 23-input, 89-action teacher.</p>
           </div>
           <span id="model-file-status" class="tag warn">No saved teacher</span>
         </div>
@@ -790,7 +790,7 @@
 
       <article class="panel" style="margin-top:13px">
         <div class="panel-head"><div><h3>About this experiment</h3><p class="panel-sub">Interpret results in context</p></div></div>
-        <p class="note">The baseline follows each target with inverse kinematics and maximum joint speed in the same seeded simulation. DQN actions are discrete velocity commands. The robot pose is an angle-based 2D schematic, not a PyBullet camera render. The dataset calibration, distillation, grid-fault scenarios, and Raspberry Pi/ONNX execution are planned stages, not currently implemented.</p>
+        <p class="note">The IK-assisted DQN is initialized from inverse-kinematics demonstrations. The baseline follows each target with fixed-speed inverse kinematics under the same buffer model. Current held-out results show target reaching but no verified energy savings; compare energy only when both policies complete the same seeded target. The robot pose is an angle-based 2D schematic, not a PyBullet camera render. Grid-fault scenarios and Raspberry Pi execution remain future work.</p>
       </article>
     </section>
   </main>
@@ -936,17 +936,20 @@
     const { ctx, w, h } = d;
     const box = { l: 50, r: 14, t: 26, b: 30 };
     ctx.fillStyle = themeColor('--chart-label'); ctx.font = '10px Inter,sans-serif';
-    ctx.fillText('Total grid energy per episode · Ws', box.l, 15);
+    ctx.fillText('Grid energy when both controllers reach target · Ws', box.l, 15);
     if (!hist.length) { ctx.fillText('Complete an episode to compare energy totals.', box.l, 50); return; }
+    const comparable = hist.filter(it => it.energy_comparison_valid);
+    if (!comparable.length) { ctx.fillText('No episode has both controllers reaching target.', box.l, 50); return; }
     ctx.strokeStyle = themeColor('--chart-grid'); ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(box.l, box.t); ctx.lineTo(box.l, h-box.b); ctx.lineTo(w-box.r, h-box.b); ctx.stroke();
-    const vals = hist.flatMap(it => [it.grid_energy, it.baseline_grid_energy]).filter(isFinite);
+    const vals = comparable.flatMap(it => [it.grid_energy, it.baseline_grid_energy]).filter(isFinite);
     const maxV = Math.max(1, ...vals) * 1.1;
     ctx.fillStyle = themeColor('--chart-label'); ctx.font = '9px Inter,sans-serif';
     ctx.fillText(maxV.toFixed(0)+' Ws', 2, box.t + 4);
     const gw = (w - box.l - box.r) / hist.length;
     const bw = Math.max(3, Math.min(20, gw * .32));
     hist.forEach((it, i) => {
+      if (!it.energy_comparison_valid) return;
       const cx = box.l + i * gw + gw / 2;
       for (const [val, col, off] of [
         [it.baseline_grid_energy, themeColor('--chart-baseline'), -bw * .6],
@@ -1030,7 +1033,7 @@
 
   function render(s) {
     latestState = s;
-    const msgs = { idle: 'Ready · local simulation', running: s.stage === 'baseline' ? 'Measuring baseline' : 'Training', paused: 'Training paused', completed: 'Training complete', stopped: 'Training stopped', error: 'Training failed' };
+    const msgs = { idle: 'Ready · local simulation', running: s.stage === 'warmup' ? 'Collecting IK demonstrations' : s.stage === 'baseline' ? 'Measuring baseline' : 'Training', paused: 'Training paused', completed: 'Training complete', stopped: 'Training stopped', error: 'Training failed' };
     const statusText = msgs[s.status] || 'Local simulation';
     const isRunning = s.status === 'running', isErr = s.status === 'error';
 
@@ -1083,7 +1086,7 @@
     $('det-base').textContent = `${fmt(s.baseline_grid_draw)} Ws`;
 
     const last = hist[hist.length-1];
-    $('peak-val').textContent = last ? `${fmt(last.peak_reduction_percent)}%` : '—';
+    $('peak-val').textContent = last ? (last.energy_comparison_valid ? `${fmt(last.peak_reduction_percent)}%` : 'n/a') : '—';
     const done = hist.filter(it=>it.task_done).length;
     $('compl-val').textContent = hist.length ? `${fmt(done/hist.length*100,1)}%` : '—';
 
@@ -1099,7 +1102,7 @@
       else {
         hist.slice().reverse().forEach(it => {
           const li = document.createElement('li');
-          li.textContent = `Ep ${it.episode}: reward ${fmt(it.reward)}, grid ${fmt(it.grid_energy)} / base ${fmt(it.baseline_grid_energy)} Ws, peak ↓${fmt(it.peak_reduction_percent)}%, ${it.task_done ? '✓ target' : '✗ target'}`;
+          li.textContent = `Ep ${it.episode}: reward ${fmt(it.reward)}, grid ${fmt(it.grid_energy)} / base ${fmt(it.baseline_grid_energy)} Ws, peak ${it.energy_comparison_valid ? `${fmt(it.peak_reduction_percent)}%` : 'n/a'}, target teacher ${it.task_done ? '✓' : '✗'} / baseline ${it.baseline_task_done ? '✓' : '✗'}`;
           log.append(li);
         });
       }
@@ -1109,17 +1112,23 @@
       } else {
         hist.slice().reverse().forEach(it => {
           const tr = tbody.insertRow();
-          [it.episode, fmt(it.reward), `${fmt(it.grid_energy)} Ws`, `${fmt(it.baseline_grid_energy)} Ws`, `${fmt(it.peak_reduction_percent)}%`, it.task_done ? 'Target reached' : 'Not reached'].forEach((v, i) => {
+          [it.episode, fmt(it.reward), `${fmt(it.grid_energy)} Ws`, `${fmt(it.baseline_grid_energy)} Ws`, it.energy_comparison_valid ? `${fmt(it.peak_reduction_percent)}%` : 'n/a', `Teacher ${it.task_done ? 'reached' : 'missed'} / baseline ${it.baseline_task_done ? 'reached' : 'missed'}`].forEach((v, i) => {
             const td = tr.insertCell();
-            if (i === 4) { td.textContent = v; td.className = 'hi'; }
-            else if (i === 5) { const sp = document.createElement('span'); sp.className = `tag${it.task_done ? '' : ' warn'}`; sp.textContent = v; td.append(sp); }
+            if (i === 4) { td.textContent = v; td.className = it.energy_comparison_valid ? 'hi' : ''; }
+            else if (i === 5) { const sp = document.createElement('span'); sp.className = `tag${it.task_done && it.baseline_task_done ? '' : ' warn'}`; sp.textContent = v; td.append(sp); }
             else td.textContent = v;
           });
         });
       }
     }
 
-    const alertMsg = s.error ? [s.error, 'error'] : !s.pybullet_available ? ['PyBullet is unavailable. The dashboard works, but simulation training needs the optional setup in README.md.', 'warning'] : s.agent_grid_draw > 3 ? [`Teacher draw ${fmt(s.agent_grid_draw)} Ws exceeded 3.0 Ws peak threshold.`, 'warning'] : s.status==='running'&&s.stage==='baseline' ? ['Measuring constant-speed controller baseline.',''] : s.status==='running' ? [`Episode ${s.episode}: monitoring energy draw, buffer, and distance.`,''] : last ? [`${done}/${hist.length} tasks completed.`,''] : ['Ready. Start a short training run to collect KUKA simulation metrics.',''];
+    const alertMsg = s.error ? [s.error, 'error'] : !s.pybullet_available ? ['PyBullet is unavailable. The dashboard works, but simulation training needs the optional setup in README.md.', 'warning'] : s.agent_grid_draw > 3 ? [`IK-assisted DQN draw ${fmt(s.agent_grid_draw)} Ws exceeded 3.0 Ws peak threshold.`, 'warning'] : s.status==='running'&&s.stage==='warmup' ? ['Collecting IK demonstrations and initializing the DQN policy.',''] : s.status==='running'&&s.stage==='baseline' ? ['Measuring inverse-kinematics baseline under the same buffer model.',''] : s.status==='running' ? [`Episode ${s.episode}: monitoring energy draw, buffer, and distance.`,''] : last ? [`IK-assisted DQN reached ${done}/${hist.length} online training targets; only ${hist.filter(it=>it.energy_comparison_valid).length} episodes support matched energy comparison.`,''] : ['Ready. Start a short training run to collect KUKA simulation metrics.',''];
+    const heldoutTeacher = (s.evaluation_summary || []).find(row => row.agent === 'IK-assisted DQN');
+    const heldoutBaseline = (s.evaluation_summary || []).find(row => row.agent === 'IK baseline');
+    if (s.status === 'completed' && heldoutTeacher && heldoutBaseline) {
+      alertMsg[0] = `Held-out test: IK-assisted DQN ${heldoutTeacher.completed_episodes}/${heldoutTeacher.evaluation_episodes}; IK baseline ${heldoutBaseline.completed_episodes}/${heldoutBaseline.evaluation_episodes}. Energy is compared on matched successful targets only.`;
+      alertMsg[1] = '';
+    }
     setAlert('alert-box', alertMsg[1], alertMsg[0]);
     setAlert('det-alert', alertMsg[1], alertMsg[0]);
   }
@@ -1162,8 +1171,8 @@
 
   function exportCSV() {
     if (!hist.length) { $('err-msg').hidden=false; $('err-msg').textContent='Complete an episode before exporting.'; goTo('monitoring'); return; }
-    const cols = ['episode','steps','reward','grid_energy_ws','baseline_grid_energy_ws','peak_grid_draw','baseline_peak_grid_draw','peak_reduction_percent','task_done','distance_m','buffer_used_ws','epsilon','mean_loss'];
-    const keys = ['episode','steps','reward','grid_energy','baseline_grid_energy','peak_grid_draw','baseline_peak_grid_draw','peak_reduction_percent','task_done','distance','buffer_used','epsilon','mean_loss'];
+    const cols = ['episode','steps','reward','grid_energy_ws','baseline_grid_energy_ws','peak_grid_draw','baseline_peak_grid_draw','peak_reduction_percent','energy_comparison_valid','task_done','baseline_task_done','distance_m','baseline_distance_m','buffer_used_ws','epsilon','mean_loss'];
+    const keys = ['episode','steps','reward','grid_energy','baseline_grid_energy','peak_grid_draw','baseline_peak_grid_draw','peak_reduction_percent','energy_comparison_valid','task_done','baseline_task_done','distance','baseline_distance','buffer_used','epsilon','mean_loss'];
     const rows = hist.map(ep => keys.map(k => `"${String(ep[k]??'').replaceAll('"','""')}"`).join(','));
     const blob = new Blob([[cols.join(','),...rows].join('\r\n')], {type:'text/csv'});
     const url = URL.createObjectURL(blob);

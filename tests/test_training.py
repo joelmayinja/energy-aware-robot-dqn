@@ -1,3 +1,4 @@
+import csv
 import sys
 import tempfile
 import unittest
@@ -23,6 +24,7 @@ class FakeRobotArmEnv:
         self.step_count = 0
         self.total_grid_draw = 0.0
         self.peak_grid_draw = 0.0
+        self.buffer_states = []
         self.robot_id = 1
         self.end_effector_link = 6
 
@@ -33,6 +35,7 @@ class FakeRobotArmEnv:
         return np.zeros(23, dtype=np.float32), {}
 
     def step(self, action):
+        self.buffer_states.append(self.buffer_enabled)
         self.step_count += 1
         grid_draw = 0.5
         self.total_grid_draw += grid_draw
@@ -57,7 +60,14 @@ class FakeRobotArmEnv:
 class TrainingLoopTests(unittest.TestCase):
     def test_training_compares_baseline_saves_outputs_and_records_results(self):
         fake_environment = ModuleType("src.environment")
-        fake_environment.RobotArmEnv = FakeRobotArmEnv
+        created_environments = []
+
+        def create_environment(**kwargs):
+            environment = FakeRobotArmEnv(**kwargs)
+            created_environments.append(environment)
+            return environment
+
+        fake_environment.RobotArmEnv = create_environment
         fake_pybullet = ModuleType("pybullet")
         fake_pybullet.calculateInverseKinematics = lambda *args: [0.0] * 7
         fake_pybullet.getJointState = lambda *args: [0.0]
@@ -67,6 +77,14 @@ class TrainingLoopTests(unittest.TestCase):
         pause_event.set()
 
         with tempfile.TemporaryDirectory() as temporary_directory:
+            history_path = training.Path(temporary_directory) / "training_history.csv"
+            with history_path.open("w", newline="", encoding="utf-8") as file:
+                writer = csv.DictWriter(
+                    file, fieldnames=("episode", "peak_reduction_percent")
+                )
+                writer.writeheader()
+                writer.writerow({"episode": 0, "peak_reduction_percent": 60.91})
+
             with (
                 patch.dict(
                     sys.modules,
@@ -86,11 +104,19 @@ class TrainingLoopTests(unittest.TestCase):
             self.assertEqual(len(completed), 1)
             self.assertEqual(completed[0]["grid_energy"], 1.0)
             self.assertEqual(completed[0]["baseline_grid_energy"], 1.0)
-            self.assertEqual(completed[0]["peak_reduction_percent"], 0.0)
+            self.assertIsNone(completed[0]["peak_reduction_percent"])
+            self.assertFalse(completed[0]["energy_comparison_valid"])
+            self.assertTrue(all(created_environments[0].buffer_states))
             self.assertEqual([item["stage"] for item in progress], ["baseline"] * 2 + ["teacher"] * 2)
             self.assertTrue((training.Path(temporary_directory) / "models" / "teacher.pt").is_file())
             self.assertTrue((training.Path(temporary_directory) / "training_history.csv").is_file())
             self.assertTrue((training.Path(temporary_directory) / "data" / "processed" / "teacher_replay.npz").is_file())
+            with history_path.open("r", newline="", encoding="utf-8") as file:
+                history = list(csv.DictReader(file))
+            self.assertEqual(history[0]["peak_reduction_percent"], "60.91")
+            self.assertEqual(history[0]["energy_comparison_valid"], "False")
+            self.assertEqual(history[1]["energy_comparison_valid"], "False")
+            self.assertEqual(history[1]["baseline_task_done"], "False")
 
 
 if __name__ == "__main__":

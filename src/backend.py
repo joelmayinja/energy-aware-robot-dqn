@@ -55,12 +55,13 @@ class TrainingController:
             "buffer_used": 0.0,
             "distance": 0.0,
             "phase": 0,
-            "epsilon": 1.0,
+            "epsilon": 0.1,
             "loss": None,
             "joint_positions": [0.0] * 6,
             "series": [],
             "series_episode": 0,
             "history": [],
+            "evaluation_summary": [],
             "run_id": 0,
             "speed": 3,
             "error": None,
@@ -84,7 +85,7 @@ class TrainingController:
             self.state = self._empty_state()
             self.state.update(
                 status="running",
-                stage="baseline",
+                stage="warmup",
                 episodes_requested=episodes,
                 speed=self.speed,
                 run_id=run_id,
@@ -154,6 +155,10 @@ class TrainingController:
             self.state["history"].append(result)
             self.state["history"] = self.state["history"][-500:]
 
+    def _record_evaluation(self, summary):
+        with self.lock:
+            self.state["evaluation_summary"] = [dict(row) for row in summary]
+
     def _run(self, episodes, resume_model=False):
         try:
             train(
@@ -164,6 +169,7 @@ class TrainingController:
                 self._update_step,
                 self._record_episode,
                 resume_model=resume_model,
+                on_evaluation=self._record_evaluation,
             )
             with self.lock:
                 self.state["status"] = "stopped" if self.stop_event.is_set() else "completed"

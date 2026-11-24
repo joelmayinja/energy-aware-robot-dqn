@@ -24,6 +24,7 @@ the proposal) would be DDPG/SAC for continuous actions.
 """
 
 import random
+from itertools import product
 from collections import deque
 
 import numpy as np
@@ -40,12 +41,10 @@ NUM_LEVELS = len(VELOCITY_LEVELS)
 
 def build_discrete_action_table(num_joints):
     """
-    Builds every combination of (joint -> velocity level) would be
-    NUM_LEVELS ** num_joints actions, which explodes fast (5**6 = 15,625).
-    Instead, we use a simpler "one joint moves at a time" action set, which
-    is small, learnable, and still lets the agent reach the full state
-    space over multiple steps - a common simplification for DQN on
-    multi-joint arms.
+    Builds a compact set containing the original single-joint actions plus
+    coordinated full-speed directions for all joints. The coordinated
+    actions let the DQN change several joints in one simulation step, as the
+    IK baseline does, without enumerating all 5**num_joints combinations.
 
     Returns a list of 6-length velocity arrays, one per discrete action.
     """
@@ -57,6 +56,8 @@ def build_discrete_action_table(num_joints):
             action = np.zeros(num_joints, dtype=np.float32)
             action[joint_idx] = level
             actions.append(action)
+    for directions in product((-1.0, 1.0), repeat=num_joints):
+        actions.append(np.asarray(directions, dtype=np.float32))
     return actions
 
 
@@ -143,9 +144,13 @@ class DQNAgent:
         that's what keeps the learning target stable."""
         self.target_network.load_state_dict(self.q_network.state_dict())
 
-    def learn(self, batch_size=64):
-        """One gradient-descent step on a random batch from the replay
-        buffer. Returns the loss value (or None if not enough data yet)."""
+    def learn(self, batch_size=64, expert_data=None, imitation_weight=0.0):
+        """Run a DQN update, optionally retaining an IK demonstration policy.
+
+        expert_data is a pair of NumPy arrays (states, action_indices). The
+        auxiliary cross-entropy term is used for behavior-cloning warm starts
+        and fine-tuning; set imitation_weight=0 for ordinary DQN learning.
+        """
         if len(self.replay_buffer) < batch_size:
             return None
 
@@ -169,6 +174,22 @@ class DQNAgent:
             target_q = rewards_t + self.gamma * max_next_q * (1.0 - dones_t)
 
         loss = F.mse_loss(current_q, target_q)
+
+        if expert_data is not None and imitation_weight > 0:
+            expert_states, expert_actions = expert_data
+            sample_indices = np.random.randint(
+                0, len(expert_states), size=min(batch_size, len(expert_states))
+            )
+            expert_states_t = torch.as_tensor(
+                expert_states[sample_indices], dtype=torch.float32, device=self.device
+            )
+            expert_actions_t = torch.as_tensor(
+                expert_actions[sample_indices], dtype=torch.long, device=self.device
+            )
+            imitation_loss = F.cross_entropy(
+                self.q_network(expert_states_t), expert_actions_t
+            )
+            loss = loss + float(imitation_weight) * imitation_loss
 
         self.optimizer.zero_grad()
         loss.backward()

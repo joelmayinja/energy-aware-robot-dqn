@@ -1,15 +1,10 @@
-"""
+"""PyBullet robot-arm environment with a simplified regenerative-energy model.
 
-
---- THE CORE IDEA (updated) ---
-The robot has an ENERGY BUFFER — like a small rechargeable battery built
-into the controller. During light tasks (small, easy movements), the robot
-moves gently and saves the energy it did NOT use into that buffer.
-During heavy tasks (big movements, far targets), it draws from that buffer
-to supplement the grid power, so the peak draw from the actual grid is
-never dangerously high.
-
-spikes is worth money everywhere.
+Each episode presents an easy target followed by a harder target. The buffer
+starts empty and can only charge from simulated braking work, then offset grid
+draw during the harder phase. This simulation does not establish physical
+battery, motor, or peak-shaving performance. Energy savings must be measured
+against a baseline on matched successful targets.
 
 --- STATE SPACE (what the robot "sees" each step, 23 values total) ---
     - joint positions        (6 values, radians)
@@ -32,19 +27,19 @@ spikes is worth money everywhere.
         - PEAK_PEN   * peak_spike         # heavy extra penalty if grid draw spikes
         + BUFFER_REW * buffer_saved       # reward saving energy into the buffer
         + BUFFER_USE * buffer_deployed    # reward using buffer (not grid) for heavy tasks
-        - BETA       * distance           # penalise being far from the target
+    + BETA       * progress           # reward reducing target distance
         + COMPLETION_BONUS if done        # big reward for finishing
     )
 
 --- EPISODE STRUCTURE ---
 Each episode has TWO PHASES:
-    Phase 0 (LIGHT): target is close and easy. Robot should move gently
-                     and save energy into the buffer.
+    Phase 0 (LIGHT): target is close and easy. Braking work can charge the
+                     buffer when the simplified mechanical-work model detects it.
     Phase 1 (HEAVY): target jumps to a far, harder position. Robot should
                      draw from the buffer to reach it without spiking the grid.
 
-This two-phase structure is what forces the DQN to learn the
-"save now, spend later" behaviour. Without it, there's no reason to buffer.
+This two-phase structure makes any stored braking energy available for a later
+heavy movement. The buffer may remain empty if no braking energy is recovered.
 
 --- NOTE ON 6-DOF ---
 PyBullet's KUKA iiwa has 7 physical joints. Joint 6 (wrist roll) is locked
@@ -62,34 +57,32 @@ from gymnasium import spaces
 class RobotArmEnv(gym.Env):
     """
     6-DoF robot arm with an energy buffer.
-    The agent learns to save energy during light tasks and deploy it
-    during heavy tasks, keeping peak grid draw low.
+    An IK-assisted DQN controls a simulated arm with a regenerative energy
+    buffer. Energy savings are evaluated only on completed matched targets.
     """
 
     metadata = {"render_modes": ["human", None]}
 
-    # --- Physical limits ---
-    MAX_JOINT_VELOCITY  = 1.5    # rad/s
-    MAX_STEPS           = 400    # longer episodes to give time for both phases
-    TARGET_THRESHOLD    = 0.05   # metres — "close enough" to count as done
+# --- Physical limits ---
+    MAX_JOINT_VELOCITY  = 2.0    # rad/s (increased for reachability)
+    MAX_STEPS           = 200    # shorter episodes = more episodes per run
+    TARGET_THRESHOLD    = 0.15   # metres — "close enough" (relaxed further)
 
     # --- Buffer settings ---
     BUFFER_CAPACITY     = 50.0   # watt-seconds — max energy the buffer can hold
     BUFFER_CHARGE_EFF   = 0.80   # 80% of saved energy actually goes into buffer
-                                 # (realistic: no charger is 100% efficient)
     PEAK_THRESHOLD      = 3.0    # watt-seconds — grid draw above this is a "spike"
 
     # --- Reward weights ---
-    ALPHA           = 0.05   # penalise pulling energy from the grid
-    PEAK_PEN        = 0.30   # extra penalty for SPIKING the grid (above threshold)
-    BUFFER_REW      = 0.10   # reward for saving energy INTO the buffer
-    BUFFER_USE      = 0.20   # reward for using buffer INSTEAD of grid
-    BETA            = 1.00   # penalise distance from target
-    COMPLETION_BONUS = 50.0  # reward for completing the task
+    ALPHA           = 0.002    # minimal grid draw penalty
+    PEAK_PEN        = 0.30
+    BUFFER_REW      = 0.10
+    BUFFER_USE      = 0.20
+    BETA            = 20.0     # dense reward for reducing target distance
+    COMPLETION_BONUS = 100.0   # terminal reward for completing the heavy target
 
     # --- Phase transition ---
-    # The episode switches from light to heavy task at this step fraction.
-    PHASE_SWITCH_FRACTION = 0.40   # switch to heavy task at 40% of episode length
+    PHASE_SWITCH_FRACTION = 0.25   # switch to heavy task at 25% (more time for heavy phase)
 
     def __init__(self, render_mode=None, buffer_enabled=True):
         super().__init__()
@@ -176,22 +169,21 @@ class RobotArmEnv(gym.Env):
         # --- Two targets: one easy (phase 0), one hard (phase 1) ---
         # Light target: close to the arm, easy to reach gently
         self.light_target = np.array([
-            self.np_random.uniform(0.3, 0.45),
-            self.np_random.uniform(-0.15, 0.15),
-            self.np_random.uniform(0.3, 0.45),
+            self.np_random.uniform(0.20, 0.30),
+            self.np_random.uniform(-0.1, 0.1),
+            self.np_random.uniform(0.20, 0.30),
         ])
-        # Heavy target: further away, needs more power to reach in time
+        # Heavy target: reachable but needs power
         self.heavy_target = np.array([
-            self.np_random.uniform(0.5, 0.70),
-            self.np_random.uniform(-0.35, 0.35),
-            self.np_random.uniform(0.15, 0.55),
+            self.np_random.uniform(0.30, 0.45),
+            self.np_random.uniform(-0.15, 0.15),
+            self.np_random.uniform(0.15, 0.35),
         ])
 
         self.target_position   = self.light_target.copy()
         self.task_phase        = 0
-        self.energy_buffer     = (
-            float(self.np_random.uniform(5.0, 15.0)) if self.buffer_enabled else 0.0
-        )
+        # Start empty so every stored joule must come from simulated recovery.
+        self.energy_buffer     = 0.0
         self.buffer_used_last  = 0.0
         self.grid_draw_last    = 0.0
         self.peak_grid_draw    = 0.0
@@ -206,12 +198,17 @@ class RobotArmEnv(gym.Env):
         action = np.clip(action, -1.0, 1.0)
 
         # --- Phase transition check ---
-        # At 40% of the episode, switch to the heavy task.
-        # The buffer the agent saved in phase 0 is now available for phase 1.
+        # At the configured fraction of the episode, switch to the heavy task.
+        # Recovered braking energy is available for the heavy phase.
         phase_switch_step = int(self.MAX_STEPS * self.PHASE_SWITCH_FRACTION)
         if self.step_count == phase_switch_step and self.task_phase == 0:
             self.task_phase      = 1
             self.target_position = self.heavy_target.copy()
+
+        ee_before = np.array(
+            p.getLinkState(self.robot_id, self.end_effector_link)[0], dtype=np.float32
+        )
+        distance_before = float(np.linalg.norm(ee_before - self.target_position))
 
         # --- Apply joint velocities ---
         target_velocities = action * self.MAX_JOINT_VELOCITY
@@ -233,15 +230,15 @@ class RobotArmEnv(gym.Env):
         # --- Measure raw energy this step ---
         dt = 1.0 / 240.0
         raw_energy = 0.0
+        regenerative_energy = 0.0
         for joint_idx in self.controlled_joints:
             js = p.getJointState(self.robot_id, joint_idx)
-            raw_energy += abs(js[3] * js[1]) * dt   # |torque * velocity| * dt
+            mechanical_work = js[3] * js[1] * dt
+            raw_energy += max(0.0, mechanical_work)
+            regenerative_energy += max(0.0, -mechanical_work)
 
         # --- Energy buffer logic ---
-        # During phase 0 (light task): move gently -> any energy BELOW
-        # a gentle threshold gets saved into the buffer.
-        # During phase 1 (heavy task): draw from the buffer first before
-        # pulling from the grid.
+        # Store recovered braking work during phase 0 and deploy it in phase 1.
 
         buffer_saved    = 0.0
         buffer_deployed = 0.0
@@ -251,12 +248,9 @@ class RobotArmEnv(gym.Env):
             grid_draw = raw_energy
 
         elif self.task_phase == 0:
-            # Light phase: save surplus energy into the buffer
-            # "Surplus" = energy we used LESS THAN the gentle ceiling
-            gentle_ceiling = 1.5   # watt-seconds — gentle movement threshold
-            surplus = max(0.0, gentle_ceiling - raw_energy)
+            # Charge only from mechanical energy recovered during braking.
             buffer_saved = min(
-                surplus * self.BUFFER_CHARGE_EFF,
+                regenerative_energy * self.BUFFER_CHARGE_EFF,
                 self.BUFFER_CAPACITY - self.energy_buffer
             )
             self.energy_buffer += buffer_saved
@@ -291,7 +285,7 @@ class RobotArmEnv(gym.Env):
             - self.PEAK_PEN * peak_penalty
             + self.BUFFER_REW  * buffer_saved
             + self.BUFFER_USE  * buffer_deployed
-            - self.BETA     * distance
+            + self.BETA     * (distance_before - distance)
         )
         if task_done:
             reward += self.COMPLETION_BONUS
@@ -301,6 +295,7 @@ class RobotArmEnv(gym.Env):
 
         info = {
             "energy_raw":       raw_energy,
+            "regenerative_energy": regenerative_energy,
             "grid_draw":        grid_draw,
             "peak_spike":      peak_spike,
             "peak_penalty":    peak_penalty,
