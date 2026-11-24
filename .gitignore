@@ -36,3 +36,8 @@ Thumbs.db
 # Logs
 *.log
 training_history.csv
+
+# Local workspace and generated validation artifacts
+/.kilo/
+/colab_source/
+/tmp/
