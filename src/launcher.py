@@ -40,7 +40,11 @@ def _backend_at_port():
             return "occupied"
         with urlopen(URL, timeout=1) as response:
             page = response.read(4096).decode("utf-8", errors="replace")
-        return "dashboard" if "<title>Wallie | Energy Intelligence</title>" in page else "legacy_dashboard"
+        is_current_dashboard = (
+            "<title>Wallie | Energy Intelligence</title>" in page
+            and 'name="wattwise-entry" content="demo-auth-v1"' in page
+        )
+        return "dashboard" if is_current_dashboard else "legacy_dashboard"
     except HTTPError as error:
         if error.code == 404:
             try:

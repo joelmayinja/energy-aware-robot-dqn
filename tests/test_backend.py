@@ -106,6 +106,7 @@ class DashboardServerTests(unittest.TestCase):
             on_step,
             on_episode,
             resume_model=False,
+            on_evaluation=None,
         ):
             on_step(
                 {
@@ -209,7 +210,13 @@ class DashboardServerTests(unittest.TestCase):
         from tempfile import TemporaryDirectory
 
         with TemporaryDirectory() as temporary_directory:
-            with patch("src.backend.MODEL_PATH", Path(temporary_directory) / "missing.pt"):
+            with (
+                patch("src.backend.MODEL_PATH", Path(temporary_directory) / "missing.pt"),
+                patch(
+                    "src.backend.TRAINING_CHECKPOINT_PATH",
+                    Path(temporary_directory) / "missing-checkpoint.pt",
+                ),
+            ):
                 response = self.client.post(
                     "/api/train", json={"episodes": 1, "resume_model": True}
                 )
@@ -231,6 +238,7 @@ class DashboardServerTests(unittest.TestCase):
             on_step,
             on_episode,
             resume_model=False,
+            on_evaluation=None,
         ):
             received_resume_values.append(resume_model)
 
@@ -250,6 +258,38 @@ class DashboardServerTests(unittest.TestCase):
         self.assertTrue(response.json["resumed_model"])
         self.assertEqual(received_resume_values, [True])
 
+    def test_training_can_resume_from_checkpoint_without_inference_weights(self):
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+
+        def fake_train(
+            episodes,
+            stop_event,
+            pause_event,
+            speed_provider,
+            on_step,
+            on_episode,
+            resume_model=False,
+            on_evaluation=None,
+        ):
+            self.assertTrue(resume_model)
+
+        with TemporaryDirectory() as temporary_directory:
+            missing_model = Path(temporary_directory) / "teacher.pt"
+            checkpoint = Path(temporary_directory) / "teacher_training_checkpoint.pt"
+            checkpoint.touch()
+            with (
+                patch("src.backend.MODEL_PATH", missing_model),
+                patch("src.backend.TRAINING_CHECKPOINT_PATH", checkpoint),
+                patch("src.backend.train", side_effect=fake_train),
+            ):
+                response = self.client.post(
+                    "/api/train", json={"episodes": 1, "resume_model": True}
+                )
+                backend.controller.thread.join(timeout=2)
+
+        self.assertEqual(response.status_code, 202)
+
     def test_pause_resume_and_stop_are_available_during_training(self):
         def waiting_train(
             episodes,
@@ -259,6 +299,7 @@ class DashboardServerTests(unittest.TestCase):
             on_step,
             on_episode,
             resume_model=False,
+            on_evaluation=None,
         ):
             stop_event.wait(timeout=2)
 

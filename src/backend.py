@@ -1,14 +1,16 @@
 """Flask dashboard for monitoring the KUKA energy-aware DQN project."""
 
 from importlib.util import find_spec
+import csv
 import io
+import json
 import os
 import pickle
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import tempfile
 from threading import Event, Lock, Thread
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, abort, jsonify, request, send_from_directory
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from src.config import HOST, PORT
@@ -16,7 +18,42 @@ from src.training import train
 
 
 FRONTEND_ROOT = Path(__file__).resolve().parent.parent / "frontend"
+RESULTS_ROOT = Path(__file__).resolve().parent.parent / "results" / "colab_run_2026-11-24"
+DEFENCE_ROOT = FRONTEND_ROOT.parent / "DEFENCE_2026"
+RECOVERED_ROOT = RESULTS_ROOT.parent / "internal_defence_v1_1_2026-11-26"
+RECORDING_ID = "seed140000_20261127_002702"
+RECORDING_MANIFEST = f"comparison_2x2_{RECORDING_ID}.json"
+RECORDING_FILES = {
+    f"{controller}_{RECORDING_ID}.mp4"
+    for controller in ("ik", "teacher_original", "student_original", "student_improved", "comparison_2x2")
+}
+EVIDENCE_FILES = {
+    name: DEFENCE_ROOT / name for name in (
+        "corrected_policy_summary.csv", "corrected_paired_comparisons.csv",
+        "verified_model_benchmark.csv", "demo_visual_runs.csv", "independent_verification.json",
+        "student_training_history_source_copy.csv", "teacher_finetuning_history_source_copy.csv",
+        "VERIFIED_RESULTS.md", "RESEARCH_METHODOLOGY.md",
+    )
+}
+EVIDENCE_FILES.update({
+    "final_episode_metrics.csv": RECOVERED_ROOT / "outer_deadline" / "final_episode_metrics.csv",
+    "RECOVERED_RESULTS_MANIFEST.json": RECOVERED_ROOT / "RECOVERED_RESULTS_MANIFEST.json",
+    RECORDING_MANIFEST: DEFENCE_ROOT / "videos" / RECORDING_MANIFEST,
+})
+EVIDENCE_FIGURES = {
+    "completion_rates": "Completion rates and Wilson 95% intervals",
+    "energy_success_and_failure": "Simulated grid energy by task outcome",
+    "aggregate_energy_per_completion": "Total simulated grid energy per completion",
+    "peak_power": "Mean episode peak simulated power",
+    "paired_energy_saving": "Paired energy saving and bootstrap 95% intervals",
+    "paired_energy_saving_distribution": "Distribution of energy saving on shared successes",
+    "model_size_and_latency": "Model size and neural-network forward-pass latency",
+    "parameter_reduction": "Student parameter reduction",
+    "student_distillation_curves": "Student distillation and held-out action agreement",
+    "teacher_finetuning": "Teacher fine-tuning history",
+}
 MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / "teacher.pt"
+TRAINING_CHECKPOINT_PATH = MODEL_PATH.with_name("teacher_training_checkpoint.pt")
 MAX_EPISODES_PER_RUN = 500
 MAX_MODEL_UPLOAD_BYTES = 16 * 1024 * 1024
 
@@ -191,7 +228,14 @@ def upload_too_large(_error):
 
 
 @app.get("/")
+@app.get("/login")
 def frontend():
+    return send_from_directory(FRONTEND_ROOT, "login.html")
+
+
+@app.get("/app")
+@app.get("/dashboard")
+def dashboard_frontend():
     return send_from_directory(FRONTEND_ROOT, "web.html")
 
 
@@ -200,12 +244,134 @@ def frontend_asset(filename):
     return send_from_directory(FRONTEND_ROOT / "assets", filename)
 
 
+@app.get("/api/simulation-evidence")
+def simulation_evidence():
+    """Read the defence evidence from the original local artifacts."""
+    manifest_path = EVIDENCE_FILES[RECORDING_MANIFEST]
+    try:
+        with manifest_path.open(encoding="utf-8") as source:
+            manifest = json.load(source)
+        tables = {}
+        for key, filename in (
+            ("policies", "corrected_policy_summary.csv"),
+            ("paired", "corrected_paired_comparisons.csv"),
+            ("benchmark", "verified_model_benchmark.csv"),
+        ):
+            with EVIDENCE_FILES[filename].open(encoding="utf-8-sig", newline="") as source:
+                tables[key] = list(csv.DictReader(source))
+    except FileNotFoundError:
+        return jsonify(error="The local defence evidence files are unavailable."), 404
+
+    return jsonify(
+        **tables,
+        seed=manifest["seed"],
+        max_steps=manifest["max_steps"],
+        recordings=[
+            {**measurements, "file": PureWindowsPath(path).name}
+            for path, measurements in zip(manifest["individual_videos"], manifest["results"], strict=True)
+        ],
+        comparison=PureWindowsPath(manifest["comparison_video"]).name,
+        figures=[{"file": f"{name}.png", "label": label} for name, label in EVIDENCE_FIGURES.items()],
+        downloads=list(EVIDENCE_FILES),
+    )
+
+
+@app.get("/evidence/videos/<filename>")
+def evidence_video(filename):
+    if filename not in RECORDING_FILES:
+        abort(404)
+    return send_from_directory(DEFENCE_ROOT / "videos", filename, mimetype="video/mp4", conditional=True)
+
+
+@app.get("/evidence/figures/<filename>")
+def evidence_figure(filename):
+    if not filename.endswith(".png") or filename[:-4] not in EVIDENCE_FIGURES:
+        abort(404)
+    return send_from_directory(DEFENCE_ROOT / "figures", filename)
+
+
+@app.get("/evidence/downloads/<filename>")
+def evidence_download(filename):
+    if filename not in EVIDENCE_FILES:
+        abort(404)
+    path = EVIDENCE_FILES[filename]
+    return send_from_directory(path.parent, path.name, as_attachment=True)
+
+
 @app.get("/api/status")
 def training_status():
     return jsonify(
         **controller.snapshot(),
         pybullet_available=pybullet_available(),
         model_available=MODEL_PATH.is_file(),
+        checkpoint_available=TRAINING_CHECKPOINT_PATH.is_file(),
+    )
+
+
+@app.get("/api/research-results")
+def research_results():
+    """Return the checked-in matched-seed evaluation for the research page."""
+    summary_path = RESULTS_ROOT / "verified_evaluation_summary.csv"
+    paired_path = RESULTS_ROOT / "paired_evaluation.csv"
+    if not summary_path.is_file() or not paired_path.is_file():
+        return jsonify(error="The verified evaluation files are not available."), 404
+
+    with summary_path.open(newline="", encoding="utf-8") as file:
+        summary = list(csv.DictReader(file))
+    with paired_path.open(newline="", encoding="utf-8") as file:
+        paired = list(csv.DictReader(file))
+
+    def as_bool(value):
+        return str(value).strip().lower() in {"true", "1", "yes"}
+
+    def as_number(value):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    summary_fields = (
+        "episodes",
+        "completed",
+        "completion_rate_pct",
+        "mean_energy_all_ws",
+        "mean_energy_completed_ws",
+        "mean_peak_completed_ws",
+        "mean_final_distance_m",
+    )
+    for row in summary:
+        for field in summary_fields:
+            number = as_number(row.get(field))
+            row[field] = int(number) if field in {"episodes", "completed"} and number is not None else number
+
+    for row in paired:
+        row["seed"] = int(row["seed"])
+        for field in ("ik_task_done", "dqn_task_done", "comparison_valid"):
+            row[field] = as_bool(row[field])
+        for field in (
+            "ik_energy_ws",
+            "dqn_energy_ws",
+            "energy_savings_percent",
+            "ik_peak_ws",
+            "dqn_peak_ws",
+            "peak_reduction_percent",
+        ):
+            row[field] = as_number(row.get(field))
+
+    comparable = [row for row in paired if row["comparison_valid"]]
+
+    def mean_field(field):
+        values = [row[field] for row in comparable if row[field] is not None]
+        return round(sum(values) / len(values), 2) if values else None
+
+    return jsonify(
+        evaluation_date="2026-11-24",
+        seeds_tested=len(paired),
+        matched_successes=len(comparable),
+        mean_energy_savings_pct=mean_field("energy_savings_percent"),
+        mean_peak_reduction_pct=mean_field("peak_reduction_percent"),
+        summary=summary,
+        paired=paired,
     )
 
 
@@ -227,7 +393,7 @@ def start_training():
     resume_model = payload.get("resume_model", False)
     if not isinstance(resume_model, bool):
         return jsonify(error="resume_model must be true or false."), 400
-    if resume_model and not MODEL_PATH.is_file():
+    if resume_model and not MODEL_PATH.is_file() and not TRAINING_CHECKPOINT_PATH.is_file():
         return jsonify(error="No saved teacher model is available to continue from."), 409
     if not pybullet_available():
         return jsonify(error="PyBullet is unavailable. Follow the optional training setup in README.md, then restart the dashboard."), 503

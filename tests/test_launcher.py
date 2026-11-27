@@ -12,7 +12,7 @@ class DashboardLauncherTests(unittest.TestCase):
         )
         page_response = MagicMock()
         page_response.__enter__.return_value.read.return_value = (
-            b"<title>Wallie | Energy Intelligence</title>"
+            b'<title>Wallie | Energy Intelligence</title><meta name="wattwise-entry" content="demo-auth-v1">'
         )
 
         with patch("src.launcher.urlopen", side_effect=[health_response, page_response]):
