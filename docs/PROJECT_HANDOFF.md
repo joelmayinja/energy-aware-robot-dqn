@@ -24,9 +24,11 @@ performance.
 - The repository's local VS Code project contains the dashboard UI, a Flask API
   and training controller, a Gymnasium/PyBullet robot environment, and a DQN
   teacher training loop.
-- Flask now serves the dashboard page at `/`, its assets at `/assets/...`, and
-  the API from the same origin. The frontend calls relative `/api/...` paths.
-  The intended browser address is `http://127.0.0.1:5000/` on local Windows.
+- Flask now serves the welcome/sign-in page at `/`, the dashboard at `/app`,
+  assets at `/assets/...`, and the API from the same origin. The frontend calls
+  relative `/api/...` paths. The intended local address is
+  `http://127.0.0.1:5000/`; continue into the dashboard using the demo guest
+  button. The account screens are presentation-only and do not protect the API.
 - `src/dashboard.py` preserves the Codespaces-compatible Flask import and
   references the same Flask app defined in `src/backend.py`; it is not a second
   server or backend.

@@ -1,0 +1,59 @@
+﻿DSC3114 RESEARCH POSTER — CONTENT DRAFT
+Editable poster export is pending because the required PowerPoint runtime is unavailable in this session.
+
+TITLE
+Energy-Aware Control of a Simulated KUKA iiwa: An IK-Assisted DQN Evaluation
+
+AUTHOR
+Mayinja Joel | BSc Computer Science | Uganda Christian University
+
+TAKE-HOME RESULT
+The selected IK-assisted DQN reached the target in 44 of 50 held-out episodes (88%), close to the IK baseline (45/50, 90%). On the 44 seeds both controllers completed, the DQN used more energy on average: mean paired energy saving = −10.82%. Target reaching was demonstrated; energy saving was not.
+
+BACKGROUND
+Robot control must balance completing a task with the energy used to do it. Prior work on reinforcement learning notes that directly penalizing energy can create a trade-off with task performance (Peri et al., 2025). Deep reinforcement learning has also been applied to motion planning and energy-oriented inverse kinematics for redundant robot manipulators (Li et al., 2022). This project evaluates that task–energy balance in a small, reproducible simulation prototype.
+
+RESEARCH QUESTION
+Can an inverse-kinematics-assisted DQN reach targets while reducing simulated grid energy compared with a fixed-speed IK baseline?
+
+METHOD
+• Environment: PyBullet simulation of a KUKA iiwa; no physical robot was tested.
+• Agent: IK-assisted DQN, initialized from IK demonstrations and fine-tuned with DQN.
+• Observation/action: 23 state values and 89 discrete joint-velocity actions.
+• Energy model: positive joint mechanical work contributes to draw; braking work is treated as recoverable through a 50 Ws buffer at 80% efficiency. This is a simplified simulation model, not a measured battery or motor model.
+• Task: reach a target within 0.15 m, with a 200-step episode limit.
+• Evaluation: selected greedy teacher checkpoint and IK baseline evaluated on the same 50 held-out seeds (1000–1049). Energy comparisons use only seeds where both controllers succeeded.
+
+RESULTS
+Held-out target completion (50 seeds each)
+IK-assisted DQN: 44/50 = 88%
+Fixed-speed IK baseline: 45/50 = 90%
+
+Paired energy comparison
+44 matched successful seeds; mean per-seed energy saving: −10.82% (negative means the DQN used more energy).
+Mean peak reduction: 0.22%; median peak reduction: 3.24%.
+
+Training pipeline context
+The online training history recorded 3 successes in 500 episodes (0.6%). The 44/50 result above is a separate greedy evaluation of the selected, IK-warm-started checkpoint. These numbers describe different phases and must not be presented as one training success rate.
+
+INTERPRETATION
+The selected policy can reach targets in held-out simulation episodes, but it did not outperform the IK baseline on completion and did not reduce energy in the matched successful episodes. The energy-aware objective therefore remains unvalidated. The small difference in completion rate should not be treated as evidence of superiority.
+
+LIMITATIONS
+• Results are from a simulator and a simplified energy-buffer model.
+• No physical KUKA test, industrial power measurement, or deployment evaluation was performed.
+• Energy is compared on the 44 seeds where both controllers completed; this avoids comparing different successful episode sets.
+• A single selected checkpoint and 50 held-out seeds provide limited evidence of generalization.
+
+CONCLUSION AND NEXT STEPS
+This prototype provides an honest baseline comparison: the IK-assisted DQN achieved 88% target completion, while the IK baseline achieved 90%; the DQN used more energy on average in matched successes. Next, improve the energy objective and evaluation protocol, then repeat training across multiple random seeds before making any claim of energy reduction.
+
+REFERENCES
+[1] X. Li, H. Liu, and M. Dong, “A General Framework of Motion Planning for Redundant Robot Manipulator Based on Deep Reinforcement Learning,” IEEE Transactions on Industrial Informatics, 18(8), 5253–5263, 2022. https://doi.org/10.1109/TII.2021.3125447
+[2] S. Peri, A. Perincherry, B. Pandit, and S. Lee, “Non-conflicting Energy Minimization in Reinforcement Learning based Robot Control,” Proceedings of the 9th Conference on Robot Learning, PMLR 305, 221–237, 2025. https://proceedings.mlr.press/v305/peri25a.html
+
+DATA SOURCE
+Project evaluation outputs: results/colab_run_2026-11-24/verified_evaluation_summary.csv, paired_evaluation.csv, and README.md. Evaluation run dated 24 November 2026. Preserve the negative energy result and the separate 3/500 online training statistic in any subsequent version.
+
+LAYOUT DIRECTION FOR THE POWERPOINT
+A1 landscape, light background, dark navy type with one restrained orange accent. Large headline and take-home result across the top. Three main columns: (1) context and method, (2) prominent completion comparison and paired-energy result, (3) interpretation, limitations, conclusion. Use a native editable bar chart for 88% versus 90%. Keep the 3/500 online-training statistic visually separate from the held-out evaluation. Put references and data source along the bottom edge.

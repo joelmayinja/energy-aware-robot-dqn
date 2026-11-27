@@ -120,11 +120,27 @@ The action values are **joint-velocity commands**, not torque commands. The simu
 3. On first run, the launcher creates a small `.venv310` environment and installs Flask only. It starts the dashboard and opens **http://127.0.0.1:5000**.
 4. Keep the terminal open while using the dashboard. Press **Ctrl+C** there to stop the server.
 
-The Flask application serves the frontend, assets, training API, and model controls together at `127.0.0.1:5000`. This is one project and one running web application; the frontend and backend remain in separate files so each has a clear responsibility. The dashboard opens in the Codespaces-inspired dark theme and includes a light/dark toggle. Neither Codespaces nor Visual Studio Build Tools is needed to view it.
+The Flask application serves the welcome/sign-in page at `127.0.0.1:5000/`, the dashboard at `/app`, and the frontend assets, training API, and model controls from one local server. The welcome page includes sign-in, create-profile, password-help, and demo-guest flows with page transitions. This is a presentation-only demo gate: it stores only a display name in the current browser session, does not authenticate users, and does not protect the API. Do not enter real passwords. The dashboard uses a responsive dark theme with a light-mode toggle. Neither Codespaces nor Visual Studio Build Tools is needed just to view the site.
 
 ### Start in Codespaces
 
-From the project root, run:
+From the project root, create the virtual environment and install only the
+packages needed to run and validate the simulator:
+
+```bash
+python -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install -r requirements-dashboard.txt torch gymnasium pybullet numpy
+.venv/bin/python -c "import flask, gymnasium, numpy, pybullet, torch; print('Training environment ready')"
+```
+
+Run the project checks before starting the dashboard:
+
+```bash
+.venv/bin/python -m unittest discover -s tests -v
+```
+
+Then, from the project root, run:
 
 ```bash
 .venv/bin/python -m flask --app src.dashboard:app run --host 0.0.0.0 --port 5000 --no-reload
@@ -136,10 +152,20 @@ second backend.
 
 The dashboard offers:
 
+- **Welcome and demo access** — sign-in and create-profile screens for the local presentation; no real account service is connected.
 - **Overview** — progress cards and episode-energy charts.
 - **Live monitoring** — training controls, live grid draw, energy buffer, and arm schematic.
 - **Data detection** — simulation signals, threshold alerts, and completed episode results.
 - **Model management** — upload a compatible PyTorch teacher `.pt`/`.pth` state dictionary and optionally initialize training from it, along with teacher settings and the student/edge research roadmap.
+
+When a training run completes episodes, the trainer writes
+`models/teacher_training_checkpoint.pt` alongside the weights-only
+`models/teacher.pt`. The training checkpoint preserves the online and target
+networks, Adam optimizer, replay buffer, random-number-generator states, and
+episode counters so a dashboard run started with **resume** can continue the
+learner. If you upload a new weights-only model, it takes precedence over an
+older training checkpoint; that run starts with fresh optimizer and replay
+state because those are not part of the uploaded file.
 
 ### Training setup without Visual Studio Build Tools
 
@@ -174,9 +200,9 @@ Tests cover dashboard endpoints, DQN action selection, environment behavior, and
 ## Customize the dashboard
 
 1. Open the repository folder in VS Code.
-2. Press **Ctrl+P** and open `frontend/web.html`.
-3. Edit the HTML text and navigation, or adjust the CSS in its `<style>` block.
-4. Put your own JPG or PNG in `frontend/assets/`, then reference it as `/assets/your-image.jpg`.
+2. Press **Ctrl+P** and open `frontend/login.html` for the welcome flow or `frontend/web.html` for the dashboard.
+3. Edit the HTML text and navigation, or adjust the CSS in each file's `<style>` block.
+4. Put your own JPG or PNG in `frontend/assets/`, then reference it as `/assets/your-image.jpg`. To use the robot image on the login page, save it as `frontend/assets/robot-wireframe.png`.
 5. Refresh the browser. Flask serves the frontend and API together on port 5000.
 
 The frontend files are in [frontend/](frontend/); the backend API is in [src/backend.py](src/backend.py). The launcher is [src/launcher.py](src/launcher.py).

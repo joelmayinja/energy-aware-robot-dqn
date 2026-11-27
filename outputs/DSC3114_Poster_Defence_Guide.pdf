@@ -1,0 +1,478 @@
+%PDF-1.4
+%DSC3114 guide
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R 6 0 R 8 0 R 10 0 R] /Count 4 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 5 0 R >>
+endobj
+5 0 obj
+<< /Length 3056 >>
+stream
+BT
+/F1 10 Tf
+56 748 Td
+/F1 18 Tf
+(DSC3114 POSTER DEFENCE GUIDE) Tj
+/F1 10 Tf
+0 -30 Td
+(Energy-Aware Control of a Simulated KUKA iiwa) Tj
+0 -23 Td
+(Mayinja Joel | Uganda Christian University | 26 November 2026) Tj
+0 -14 Td
+0 -8 Td
+/F1 11 Tf
+(YOUR 30-SECOND PITCH) Tj
+0 -14 Td
+/F1 10 Tf
+(My project evaluates an inverse-kinematics-assisted Deep Q-Network for) Tj
+0 -14 Td
+(target-reaching) Tj
+0 -14 Td
+(and simulated energy use in a PyBullet KUKA iiwa. I compared a selected greedy DQN) Tj
+0 -14 Td
+(checkpoint with a fixed-speed inverse-kinematics baseline on the same 50 held-out) Tj
+0 -14 Td
+(seeds. The DQN reached 44 targets and the baseline reached 45. Among 44 seeds where) Tj
+0 -14 Td
+(both succeeded, the DQN used 10.82% more energy on average. So target reaching was) Tj
+0 -14 Td
+(demonstrated in simulation, but energy saving was not. The main next step is to) Tj
+0 -14 Td
+(improve the energy objective and repeat evaluation across several training seeds.) Tj
+0 -14 Td
+0 -8 Td
+/F1 11 Tf
+(YOUR 2-MINUTE STORY) Tj
+0 -14 Td
+/F1 10 Tf
+(1. Problem: Robot controllers must complete work while managing energy. Reward) Tj
+0 -14 Td
+(design) Tj
+0 -14 Td
+(   can create a trade-off between task completion and energy cost.) Tj
+0 -14 Td
+(2. Aim: Test whether an IK-assisted DQN can reach targets while reducing simulated) Tj
+0 -14 Td
+(   grid energy compared with a simple fixed-speed IK controller.) Tj
+0 -14 Td
+(3. Setup: PyBullet simulation of a KUKA iiwa. Six joints were controlled and the) Tj
+0 -14 Td
+(wrist) Tj
+0 -14 Td
+(   roll was locked. Each observation had 23 values; the DQN chose from 89 discrete) Tj
+0 -14 Td
+(   actions. Episodes had two target phases and a 200-step limit.) Tj
+0 -14 Td
+(4. Energy model: Positive simulated mechanical work counted as grid draw. Simulated) Tj
+0 -14 Td
+(   braking work could charge a 50 Ws buffer at 80% efficiency for later use.) Tj
+0 -14 Td
+(5. Evaluation: The selected greedy checkpoint and IK baseline were run on the same) Tj
+0 -14 Td
+(   50 held-out seeds, 1000 to 1049. Energy comparisons used only shared successes.) Tj
+0 -14 Td
+(6. Finding: DQN success was 88% and IK success was 90%. On matched successes, the) Tj
+0 -14 Td
+(   DQN energy saving was minus 10.82%; a negative value means DQN used more energy.) Tj
+0 -14 Td
+(7. Conclusion: The result validates target reaching for this selected simulation) Tj
+0 -14 Td
+(   checkpoint, but does not validate the energy-saving objective.) Tj
+0 -14 Td
+0 -8 Td
+/F1 11 Tf
+(MEMORIZE THESE NUMBERS) Tj
+0 -14 Td
+/F1 10 Tf
+(DQN held-out completion: 44/50 = 88%. IK held-out completion: 45/50 = 90%.) Tj
+0 -14 Td
+(Matched successful episodes: 44. Mean paired energy saving: -10.82%. Mean peak) Tj
+0 -14 Td
+(reduction: 0.22%; median peak reduction: 3.24%. Separate online history: 3 successes) Tj
+0 -14 Td
+(in 500 episodes = 0.6%. Do not merge the two evaluation phases.) Tj
+0 -14 Td
+0 -8 Td
+(Sources: project results/colab_run_2026-11-24/verified_evaluation_summary.csv,) Tj
+0 -14 Td
+(paired_evaluation.csv, training_history.csv, and README.md.) Tj
+0 -14 Td
+ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 7 0 R >>
+endobj
+7 0 obj
+<< /Length 3231 >>
+stream
+BT
+/F1 10 Tf
+56 748 Td
+/F1 18 Tf
+(METHOD AND TERMS) Tj
+/F1 10 Tf
+0 -30 Td
+(DQN: A value-based reinforcement-learning method. A neural network estimates the) Tj
+0 -23 Td
+(value of each discrete action for a given state; the agent selects actions using) Tj
+0 -14 Td
+(epsilon-greedy exploration during training.) Tj
+0 -14 Td
+0 -8 Td
+(IK: Inverse kinematics maps a desired end-effector position to joint configurations.) Tj
+0 -14 Td
+(In this project, IK demonstrations warm-start the learned controller. The baseline) Tj
+0 -14 Td
+(uses fixed-speed IK; the tested DQN is not learning from scratch.) Tj
+0 -14 Td
+0 -8 Td
+(Replay buffer: Stores past state, action, reward, next-state, and done transitions.) Tj
+0 -14 Td
+(Training samples batches from this memory to update the Q network.) Tj
+0 -14 Td
+0 -8 Td
+(Target network: A delayed copy of the Q network used to stabilize learning targets.) Tj
+0 -14 Td
+0 -8 Td
+(Held-out seeds: Random seeds reserved for evaluation rather than the training run.) Tj
+0 -14 Td
+(Here, both controllers were evaluated using the same 50 seeds \(1000-1049\).) Tj
+0 -14 Td
+0 -8 Td
+(Matched successes: Seeds where both the DQN and IK baseline completed the task. The) Tj
+0 -14 Td
+(paired energy comparison uses these 44 seeds, making the comparison more meaningful) Tj
+0 -14 Td
+(than comparing each controller's energy over different sets of successful episodes.) Tj
+0 -14 Td
+0 -8 Td
+/F1 11 Tf
+(ENERGY RESULT - SAY IT PRECISELY) Tj
+0 -14 Td
+/F1 10 Tf
+(The project reports mean per-seed energy saving of -10.82% for 44 matched successful) Tj
+0 -14 Td
+(episodes. The sign convention is baseline energy minus DQN energy, divided by) Tj
+0 -14 Td
+(baseline) Tj
+0 -14 Td
+(energy. A negative result means the DQN consumed more energy on average. Do not) Tj
+0 -14 Td
+(claim) Tj
+0 -14 Td
+(that the DQN reduced energy. The 0.22% mean peak reduction is small; the 3.24%) Tj
+0 -14 Td
+(median) Tj
+0 -14 Td
+(peak reduction does not change the negative mean energy result.) Tj
+0 -14 Td
+0 -8 Td
+/F1 11 Tf
+(WHY 3/500 AND 44/50 BOTH APPEAR) Tj
+0 -14 Td
+/F1 10 Tf
+(3/500 is the online training history's success count. 44/50 is a separate greedy) Tj
+0 -14 Td
+(evaluation of the selected IK-warm-started teacher checkpoint on held-out seeds.) Tj
+0 -14 Td
+(They) Tj
+0 -14 Td
+(are different phases, policies, and datasets. The later evaluation does not mean the) Tj
+0 -14 Td
+(training run itself achieved 88% success, and it should not be described that way.) Tj
+0 -14 Td
+0 -8 Td
+/F1 11 Tf
+(LIMITATIONS TO STATE BEFORE THE PANEL ASKS) Tj
+0 -14 Td
+/F1 10 Tf
+(- This is a simulation; no physical KUKA robot was tested.) Tj
+0 -14 Td
+(- The buffer and energy calculation are simplified, not calibrated against motor,) Tj
+0 -14 Td
+(  battery, or factory power measurements.) Tj
+0 -14 Td
+(- The comparison uses one selected checkpoint and 50 held-out seeds.) Tj
+0 -14 Td
+(- Energy results are conditional on both controllers completing the same seed.) Tj
+0 -14 Td
+(- Findings describe this prototype and setup, not all industrial robots.) Tj
+0 -14 Td
+0 -8 Td
+(Sources: Li, Liu, and Dong \(2022\), DOI 10.1109/TII.2021.3125447; Peri et al. \(2025\),) Tj
+0 -14 Td
+(PMLR 305, https://proceedings.mlr.press/v305/peri25a.html.) Tj
+0 -14 Td
+ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 9 0 R >>
+endobj
+9 0 obj
+<< /Length 3464 >>
+stream
+BT
+/F1 10 Tf
+56 748 Td
+/F1 18 Tf
+(LIKELY PANEL QUESTIONS AND ANSWERS) Tj
+/F1 10 Tf
+0 -30 Td
+(Q: What is the main contribution of the project?) Tj
+0 -23 Td
+(A: It builds and evaluates an IK-assisted DQN pipeline with a simulated energy) Tj
+0 -14 Td
+(buffer,) Tj
+0 -14 Td
+(then compares target completion and energy against a fixed-speed IK baseline on) Tj
+0 -14 Td
+(shared) Tj
+0 -14 Td
+(held-out seeds. The measured result includes a negative energy finding.) Tj
+0 -14 Td
+0 -8 Td
+(Q: Did the DQN improve energy efficiency?) Tj
+0 -14 Td
+(A: No. In the 44 matched successful episodes, mean paired energy saving was -10.82%.) Tj
+0 -14 Td
+(With the project's sign convention, that means the DQN used more energy on average.) Tj
+0 -14 Td
+0 -8 Td
+(Q: Then was the project successful?) Tj
+0 -14 Td
+(A: The evaluation produced a reproducible comparison and identified that the energy) Tj
+0 -14 Td
+(objective was not met by this selected checkpoint. I should not present that as) Tj
+0 -14 Td
+(energy) Tj
+0 -14 Td
+(improvement. The scientific result is an honest measurement and a clear next step.) Tj
+0 -14 Td
+0 -8 Td
+(Q: Why is the held-out DQN result 88% if online training was 0.6%?) Tj
+0 -14 Td
+(A: Those figures describe separate phases. The 0.6% is online training history. The) Tj
+0 -14 Td
+(88% is a greedy evaluation of the selected checkpoint that had been warm-started) Tj
+0 -14 Td
+(with) Tj
+0 -14 Td
+(IK demonstrations, on 50 held-out seeds. They are not directly interchangeable.) Tj
+0 -14 Td
+0 -8 Td
+(Q: Why use IK demonstrations?) Tj
+0 -14 Td
+(A: The initial online DQN learning was weak. IK demonstrations give a starting) Tj
+0 -14 Td
+(policy) Tj
+0 -14 Td
+(for a difficult robot-control task. The evaluation is therefore of an IK-assisted) Tj
+0 -14 Td
+/F1 11 Tf
+(DQN,) Tj
+0 -14 Td
+/F1 10 Tf
+(not a DQN that learned the task entirely without prior demonstrations.) Tj
+0 -14 Td
+0 -8 Td
+(Q: Why compare only 44 seeds for energy?) Tj
+0 -14 Td
+(A: Those are the seeds on which both controllers completed. Comparing energy on) Tj
+0 -14 Td
+(different success sets could be misleading because task completion affects energy.) Tj
+0 -14 Td
+(The 44-seed result is conditional on both controllers succeeding.) Tj
+0 -14 Td
+0 -8 Td
+(Q: What does the 50 Ws buffer represent?) Tj
+0 -14 Td
+(A: It is a simulated storage capacity in watt-seconds. The model allows a portion of) Tj
+0 -14 Td
+(simulated braking work to be recovered and used later. It is an assumption in the) Tj
+0 -14 Td
+(simulation, not a physical battery test.) Tj
+0 -14 Td
+0 -8 Td
+(Q: Why does the reward not guarantee energy saving?) Tj
+0 -14 Td
+(A: Reward weights create a trade-off. The policy can prioritize task progress or) Tj
+0 -14 Td
+(completion over energy cost. The evaluation shows why energy and completion need to) Tj
+0 -14 Td
+(be reported separately and why reward design needs further study.) Tj
+0 -14 Td
+0 -8 Td
+(Q: Is the KUKA iiwa a seven-joint robot? Why do you say six joints?) Tj
+0 -14 Td
+(A: PyBullet's model has seven physical joints. This environment controls six and) Tj
+0 -14 Td
+(locks) Tj
+0 -14 Td
+(the wrist-roll joint. That is why the state/action design refers to six controlled) Tj
+0 -14 Td
+(joints.) Tj
+0 -14 Td
+0 -8 Td
+(Q: Can these results be generalized to factory robots?) Tj
+0 -14 Td
+(A: No. They are simulation results using simplified energy accounting. Physical) Tj
+0 -14 Td
+(validation and calibrated power measurements would be needed for that claim.) Tj
+0 -14 Td
+ET
+endstream
+endobj
+10 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 11 0 R >>
+endobj
+11 0 obj
+<< /Length 3442 >>
+stream
+BT
+/F1 10 Tf
+56 748 Td
+/F1 18 Tf
+(PRESENTATION CHECKLIST AND NEXT WORK) Tj
+/F1 10 Tf
+0 -30 Td
+(BEFORE YOU PRESENT) Tj
+0 -23 Td
+(- Open the HTML poster and check that the title, results, and references are) Tj
+0 -14 Td
+(readable.) Tj
+0 -14 Td
+(- Rehearse the 30-second pitch twice without reading every sentence.) Tj
+0 -14 Td
+(- Be ready to point to the 88% vs 90% completion comparison and the negative energy) Tj
+0 -14 Td
+(  saving figure. Explain the negative sign explicitly.) Tj
+0 -14 Td
+(- Keep 3/500 online training separate from 44/50 held-out evaluation.) Tj
+0 -14 Td
+(- Say simulation whenever describing the robot or energy result.) Tj
+0 -14 Td
+(- Do not claim energy reduction, physical validation, or industrial readiness.) Tj
+0 -14 Td
+0 -8 Td
+/F1 11 Tf
+(A SIMPLE CLOSING STATEMENT) Tj
+0 -14 Td
+/F1 10 Tf
+(The current prototype reaches targets in held-out simulation tests, but the selected) Tj
+0 -14 Td
+(DQN has not shown an energy benefit over IK. I will next review the reward and) Tj
+0 -14 Td
+(action) Tj
+0 -14 Td
+(design, train across multiple random seeds, and repeat paired evaluation before) Tj
+0 -14 Td
+(making) Tj
+0 -14 Td
+(any claim about energy savings.) Tj
+0 -14 Td
+0 -8 Td
+/F1 11 Tf
+(NEXT EXPERIMENTS) Tj
+0 -14 Td
+/F1 10 Tf
+(1. Keep the held-out test seeds fixed and separate from training and tuning seeds.) Tj
+0 -14 Td
+(2. Train several independent runs and report average and spread, not only a selected) Tj
+0 -14 Td
+(   checkpoint.) Tj
+0 -14 Td
+(3. Compare policies on shared successful targets and report completion separately.) Tj
+0 -14 Td
+(4. Inspect reward-term magnitudes and energy accounting; verify units and sign) Tj
+0 -14 Td
+(logic.) Tj
+0 -14 Td
+(5. Test whether changing the energy penalty improves energy without hurting) Tj
+0 -14 Td
+(completion.) Tj
+0 -14 Td
+(6. Only after simulation checks, consider calibrated physical power measurements.) Tj
+0 -14 Td
+0 -8 Td
+/F1 11 Tf
+(PANEL ANSWERING HABIT) Tj
+0 -14 Td
+/F1 10 Tf
+(Answer in four moves: \(1\) give the direct answer, \(2\) cite the project number or) Tj
+0 -14 Td
+(method, \(3\) state the limitation, and \(4\) say what experiment would address it. If) Tj
+0 -14 Td
+(you) Tj
+0 -14 Td
+(do not know a fact, say so and explain how you would verify it. Do not invent a) Tj
+0 -14 Td
+(result.) Tj
+0 -14 Td
+0 -8 Td
+/F1 11 Tf
+(SELECTED REFERENCES) Tj
+0 -14 Td
+/F1 10 Tf
+(Li, X., Liu, H., & Dong, M. \(2022\). A General Framework of Motion Planning for) Tj
+0 -14 Td
+(Redundant Robot Manipulator Based on Deep Reinforcement Learning. IEEE Transactions) Tj
+0 -14 Td
+(on Industrial Informatics, 18\(8\), 5253-5263. DOI: 10.1109/TII.2021.3125447.) Tj
+0 -14 Td
+0 -8 Td
+(Peri, S., Perincherry, A., Pandit, B., & Lee, S. \(2025\). Non-conflicting Energy) Tj
+0 -14 Td
+(Minimization in Reinforcement Learning based Robot Control. Proceedings of the 9th) Tj
+0 -14 Td
+(Conference on Robot Learning, PMLR 305, 221-237.) Tj
+0 -14 Td
+(https://proceedings.mlr.press/v305/peri25a.html) Tj
+0 -14 Td
+0 -8 Td
+/F1 11 Tf
+(PROJECT EVIDENCE USED) Tj
+0 -14 Td
+/F1 10 Tf
+(Evaluation run dated 24 November 2026. Files: results/colab_run_2026-11-24/) Tj
+0 -14 Td
+(verified_evaluation_summary.csv, paired_evaluation.csv, training_history.csv,) Tj
+0 -14 Td
+(README.md.) Tj
+0 -14 Td
+0 -8 Td
+(This is a preparation guide, not an official marking rubric. Follow the lecturer's) Tj
+0 -14 Td
+(instructions and replace any project details if later validated outputs change.) Tj
+0 -14 Td
+ET
+endstream
+endobj
+xref
+0 12
+0000000000 65535 f 
+0000000024 00000 n 
+0000000073 00000 n 
+0000000149 00000 n 
+0000000219 00000 n 
+0000000345 00000 n 
+0000003452 00000 n 
+0000003578 00000 n 
+0000006860 00000 n 
+0000006986 00000 n 
+0000010501 00000 n 
+0000010629 00000 n 
+trailer
+<< /Size 12 /Root 1 0 R /Info << /Title (DSC3114 Poster Defence Guide) /Author (Mayinja Joel) >> >>
+startxref
+14123
+%%EOF
+

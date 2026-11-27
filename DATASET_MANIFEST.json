@@ -1,0 +1,64 @@
+{
+  "generated_date": "2026-11-26",
+  "datasets": [
+    {
+      "id": "steel_industry_energy_consumption",
+      "official_source": "https://archive.ics.uci.edu/dataset/851/steel+industry+energy+consumption",
+      "doi": "10.24432/C52G8C",
+      "local_path": "notebooks/steel_data.csv",
+      "status": "downloaded_locally_and_inspected",
+      "license": "CC BY 4.0 (per UCI catalog)",
+      "file_bytes": 2731386,
+      "sha256": "1256c049ba3002a039a182706b2cbddb785b78e12472060c278bfa67029f49c9",
+      "used_for": "descriptive demand-pattern analysis only; never used as robot action labels or energy supply",
+      "statistics": {
+        "rows": 35040,
+        "columns": 11,
+        "missing_cells": 0,
+        "duplicate_rows": 0,
+        "coverage": "2018-01-01 00:00 through 2018-12-31 23:45",
+        "modal_interval_seconds": 900,
+        "irregular_intervals": 0,
+        "usage_kwh_mean": 27.386892408675802,
+        "usage_kwh_median": 4.57,
+        "usage_kwh_max": 157.18,
+        "load_counts": {
+          "Light_Load": 18072,
+          "Medium_Load": 9696,
+          "Maximum_Load": 7272
+        }
+      }
+    },
+    {
+      "id": "sdu_collaborative_robot_energy_modeling",
+      "official_source": "https://portal.findresearcher.sdu.dk/en/datasets/dataset-of-collaborative-robots-for-energy-consumption-modeling/",
+      "doi": "10.21227/9wnt-8v86",
+      "status": "metadata_inspected_data_download_not_confirmed",
+      "license": "Not stated on the inspected SDU metadata page; confirm at IEEE DataPort before reuse",
+      "files": [],
+      "download_attempted_at_utc": "2026-11-26T12:46:21.415120+00:00",
+      "download_attempt": "The official DOI resolved to IEEE DataPort (HTTP 200, text/html). The page lists datasets.zip (101.47 MB) and explicitly says login is required to access dataset files. Its public README link returned HTTP 403. No measurement archive was retrieved and no authentication was attempted.",
+      "metadata": "The SDU page describes UR3e and UR10e records with time, trajectory IDs, joint position/velocity, motor current/torque/voltage, end-effector measures, and robot current/voltage. Metadata is not a substitute for inspecting the data files."
+    },
+    {
+      "id": "high_payload_industrial_robot_energy",
+      "official_source": "https://data.mendeley.com/datasets/hdhchngky8/1",
+      "doi": "10.17632/hdhchngky8.1",
+      "status": "official_readme_downloaded_and_inspected_bulk_measurements_not_downloaded",
+      "license": "CC BY 4.0 (Mendeley landing page)",
+      "attempted_at_utc": "2026-11-26T12:46:21.415120+00:00",
+      "downloaded_document": {
+        "path": "data/raw/high_payload_robot/readme.txt",
+        "bytes": 5547,
+        "sha256": "54e9dd536c046ae83a6320c834420adb9b7d29b72f949583c0a7c434557eb373"
+      },
+      "official_root_file_listing": [
+        {"name": "graphs.m", "bytes": 18455, "sha256": "7d80950fa57ed44d4c6ee854a30a8165872c5da4bef05866999665d0a307bd22"},
+        {"name": "maps.m", "bytes": 6178, "sha256": "3ca81b5387bb8ffbb4197767676b767451c4acb706502e471ba4317f5a65d39c"},
+        {"name": "readme.txt", "bytes": 5547, "sha256": "54e9dd536c046ae83a6320c834420adb9b7d29b72f949583c0a7c434557eb373"}
+      ],
+      "download_attempt": "The official public file-list endpoint returned the root manifest. The README was downloaded and hashed. The official Download All endpoint reports a 2709034696-byte archive with 26 split data volumes; the measurement archive was not downloaded.",
+      "metadata": "The README specifies measured electrical time/power/energy and KUKA trace time/power/energy plus six-axis mechanical power, energy, position, velocity, acceleration, torque, current, and temperature. It warns that direct electrical measurements and KUKA trace data are not synchronized and their time vectors are shifted. These are README specifications, not inspected measurement rows."
+    }
+  ]
+}\n
