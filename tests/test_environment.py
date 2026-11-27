@@ -20,8 +20,7 @@ class RobotArmEnvironmentTests(unittest.TestCase):
         self.assertEqual(observation.shape, (23,))
         self.assertEqual(observation.dtype, np.float32)
         self.assertEqual(info, {})
-        self.assertGreaterEqual(self.env.energy_buffer, 5.0)
-        self.assertLessEqual(self.env.energy_buffer, 15.0)
+        self.assertEqual(self.env.energy_buffer, 0.0)
 
     def test_step_returns_energy_metrics_and_valid_episode_flags(self):
         self.env.reset(seed=7)

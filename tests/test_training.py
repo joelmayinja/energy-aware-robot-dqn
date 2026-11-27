@@ -7,6 +7,7 @@ from types import ModuleType, SimpleNamespace
 from unittest.mock import patch
 
 import numpy as np
+from src.dqn_teacher import DQNAgent
 
 from src import training
 
@@ -100,6 +101,16 @@ class TrainingLoopTests(unittest.TestCase):
                     progress.append,
                     completed.append,
                 )
+                resumed_completed = []
+                training.train(
+                    1,
+                    Event(),
+                    pause_event,
+                    lambda: 5,
+                    progress.append,
+                    resumed_completed.append,
+                    resume_model=True,
+                )
 
             self.assertEqual(len(completed), 1)
             self.assertEqual(completed[0]["grid_energy"], 1.0)
@@ -107,8 +118,25 @@ class TrainingLoopTests(unittest.TestCase):
             self.assertIsNone(completed[0]["peak_reduction_percent"])
             self.assertFalse(completed[0]["energy_comparison_valid"])
             self.assertTrue(all(created_environments[0].buffer_states))
-            self.assertEqual([item["stage"] for item in progress], ["baseline"] * 2 + ["teacher"] * 2)
+            self.assertEqual(
+                [item["stage"] for item in progress],
+                (["baseline"] * 2 + ["teacher"] * 2) * 2,
+            )
             self.assertTrue((training.Path(temporary_directory) / "models" / "teacher.pt").is_file())
+            checkpoint_path = (
+                training.Path(temporary_directory)
+                / "models"
+                / "teacher_training_checkpoint.pt"
+            )
+            self.assertTrue(checkpoint_path.is_file())
+            restored_agent = DQNAgent(state_dim=23, num_joints=6, device="cpu")
+            checkpoint_metadata = restored_agent.load_checkpoint(checkpoint_path)
+            self.assertTrue(restored_agent.optimizer.state)
+            self.assertEqual(len(resumed_completed), 1)
+            self.assertEqual(resumed_completed[0]["episode"], 2)
+            checkpoint_metadata = restored_agent.load_checkpoint(checkpoint_path)
+            self.assertEqual(checkpoint_metadata["episodes_completed"], 2)
+            self.assertEqual(len(restored_agent.replay_buffer), 4)
             self.assertTrue((training.Path(temporary_directory) / "training_history.csv").is_file())
             self.assertTrue((training.Path(temporary_directory) / "data" / "processed" / "teacher_replay.npz").is_file())
             with history_path.open("r", newline="", encoding="utf-8") as file:
@@ -117,6 +145,7 @@ class TrainingLoopTests(unittest.TestCase):
             self.assertEqual(history[0]["energy_comparison_valid"], "False")
             self.assertEqual(history[1]["energy_comparison_valid"], "False")
             self.assertEqual(history[1]["baseline_task_done"], "False")
+            self.assertEqual(history[2]["episode"], "2")
 
 
 if __name__ == "__main__":

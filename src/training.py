@@ -423,6 +423,7 @@ def train(
         buffer_capacity=10_000,
     )
     model_path = PROJECT_ROOT / "models" / "teacher.pt"
+    checkpoint_path = PROJECT_ROOT / "models" / "teacher_training_checkpoint.pt"
     training_history = PROJECT_ROOT / "training_history.csv"
     csv_fields = (
         "episode",
@@ -442,31 +443,62 @@ def train(
         "mean_loss",
     )
     global_step = 0
+    resume_metadata = {}
+    full_checkpoint_available = resume_model and checkpoint_path.is_file() and (
+        not model_path.is_file()
+        or checkpoint_path.stat().st_mtime_ns >= model_path.stat().st_mtime_ns
+    )
+    start_episode = 1
+    episodes_completed = 0
     expert_data = None
     behavior_cloning_state = None
+    behavior_cloning_optimizer_state = None
 
     try:
-        expert_data, demo_successes = _collect_ik_demonstrations(
-            env,
-            agent,
-            IK_DEMO_EPISODES,
-            stop_event,
-            pause_event,
-            speed_provider,
-        )
-        if resume_model:
+        if full_checkpoint_available:
+            resume_metadata = agent.load_checkpoint(checkpoint_path)
+            global_step = int(resume_metadata.get("global_step", 0))
+            episodes_completed = int(resume_metadata.get("episodes_completed", 0))
+            start_episode = episodes_completed + 1
+            expert_data = resume_metadata.get("expert_data")
+            behavior_cloning_state = resume_metadata.get("behavior_cloning_state")
+            behavior_cloning_optimizer_state = resume_metadata.get(
+                "behavior_cloning_optimizer_state"
+            )
+            if behavior_cloning_state is None:
+                behavior_cloning_state = copy.deepcopy(agent.q_network.state_dict())
+            print(
+                f"Restored full training checkpoint after episode {episodes_completed}; "
+                f"replay entries={len(agent.replay_buffer)}"
+            )
+        else:
+            expert_data, demo_successes = _collect_ik_demonstrations(
+                env,
+                agent,
+                IK_DEMO_EPISODES,
+                stop_event,
+                pause_event,
+                speed_provider,
+            )
+        if resume_model and not full_checkpoint_available:
             agent.load(model_path)
             behavior_cloning_state = copy.deepcopy(agent.q_network.state_dict())
-        elif expert_data is not None and not stop_event.is_set():
+            behavior_cloning_optimizer_state = copy.deepcopy(
+                agent.optimizer.state_dict()
+            )
+        elif not resume_model and expert_data is not None and not stop_event.is_set():
             bc_loss = _behavior_clone(
                 agent, expert_data, IK_BEHAVIOR_UPDATES, stop_event
             )
             behavior_cloning_state = copy.deepcopy(agent.q_network.state_dict())
+            behavior_cloning_optimizer_state = copy.deepcopy(
+                agent.optimizer.state_dict()
+            )
             print(
                 f"IK demonstrations: {demo_successes}/{IK_DEMO_EPISODES} completed; "
                 f"warm-start loss={bc_loss}"
             )
-        for episode in range(1, episodes + 1):
+        for episode in range(start_episode, start_episode + episodes):
             if stop_event.is_set():
                 break
 
@@ -594,8 +626,10 @@ def train(
                         "mean_loss": result["mean_loss"],
                     },
                 )
+                episodes_completed = episode
                 print(
-                    f"Episode {episode}/{episodes}: reward={result['reward']}, "
+                    f"Episode {episode} ({episode - start_episode + 1}/{episodes} this run): "
+                    f"reward={result['reward']}, "
                     f"teacher grid={result['grid_energy']} Ws, "
                     f"constant-speed baseline={result['baseline_grid_energy']} Ws, "
                     f"task_done={result['task_done']}"
@@ -603,6 +637,18 @@ def train(
 
             if episode % 5 == 0:
                 agent.update_target_network()
+            if episodes_completed == episode:
+                checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+                agent.save_checkpoint(
+                    checkpoint_path,
+                    metadata={
+                        "episodes_completed": episodes_completed,
+                        "global_step": global_step,
+                        "expert_data": expert_data,
+                        "behavior_cloning_state": behavior_cloning_state,
+                        "behavior_cloning_optimizer_state": behavior_cloning_optimizer_state,
+                    },
+                )
     finally:
         env.close()
 
@@ -632,6 +678,8 @@ def train(
                 and fine_tuned_score[1] > warm_start_score[1]
             ):
                 agent.q_network.load_state_dict(behavior_cloning_state)
+                if behavior_cloning_optimizer_state is not None:
+                    agent.optimizer.load_state_dict(behavior_cloning_optimizer_state)
                 selected_checkpoint = "IK demonstration warm-start"
             else:
                 agent.q_network.load_state_dict(finetuned_state)
@@ -643,6 +691,16 @@ def train(
             )
         model_path.parent.mkdir(parents=True, exist_ok=True)
         agent.save(model_path)
+        agent.save_checkpoint(
+            checkpoint_path,
+            metadata={
+                "episodes_completed": episodes_completed,
+                "global_step": global_step,
+                "expert_data": expert_data,
+                "behavior_cloning_state": behavior_cloning_state,
+                "behavior_cloning_optimizer_state": behavior_cloning_optimizer_state,
+            },
+        )
         replay_path = PROJECT_ROOT / "data" / "processed" / "teacher_replay.npz"
         replay_path.parent.mkdir(parents=True, exist_ok=True)
         replay = list(agent.replay_buffer.buffer)
