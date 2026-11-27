@@ -1,0 +1,5 @@
+{
+  "successful_trajectories": 89,
+  "used_success_only": true,
+  "note": "Distillation transitions restricted to successful greedy teacher trajectories."
+}

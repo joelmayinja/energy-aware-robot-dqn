@@ -1,0 +1,81 @@
+{
+  "created_utc": "2026-11-26T21:29:08.855205+00:00",
+  "seed": 140000,
+  "max_steps": 200,
+  "run_count": 4,
+  "runs_are_sequential_same_seed": true,
+  "note": "Each panel is a separately initialized PyBullet run on the same seed. No teacher controls either student.",
+  "individual_videos": [
+    "DEFENCE_2026\\videos\\ik_seed140000_20261127_002702.mp4",
+    "DEFENCE_2026\\videos\\teacher_original_seed140000_20261127_002702.mp4",
+    "DEFENCE_2026\\videos\\student_original_seed140000_20261127_002702.mp4",
+    "DEFENCE_2026\\videos\\student_improved_seed140000_20261127_002702.mp4"
+  ],
+  "comparison_video": "DEFENCE_2026\\videos\\comparison_2x2_seed140000_20261127_002702.mp4",
+  "results": [
+    {
+      "label": "Conventional fixed-speed IK",
+      "controller": "ik",
+      "seed": 140000,
+      "phase": 1,
+      "success": true,
+      "running": false,
+      "distance": 0.14682679213724376,
+      "elapsed_s": 0.733333333333332,
+      "energy_j": 80.02372064165894,
+      "mechanical_j": 87.86498621028737,
+      "peak_w": 656.626272416997,
+      "latency_ms": 0.7832,
+      "parameters": 0,
+      "steps": 176
+    },
+    {
+      "label": "Original teacher DQN",
+      "controller": "teacher_original",
+      "seed": 140000,
+      "phase": 1,
+      "success": true,
+      "running": false,
+      "distance": 0.14588517712789673,
+      "elapsed_s": 0.7374999999999986,
+      "energy_j": 254.80882051436595,
+      "mechanical_j": 268.07552812083077,
+      "peak_w": 924.2329104211208,
+      "latency_ms": 1.8425,
+      "parameters": 94809,
+      "steps": 177
+    },
+    {
+      "label": "Original student DQN",
+      "controller": "student_original",
+      "seed": 140000,
+      "phase": 1,
+      "success": false,
+      "running": false,
+      "distance": 0.23245548686268103,
+      "elapsed_s": 0.8333333333333316,
+      "energy_j": 271.5613332153175,
+      "mechanical_j": 280.9533203395672,
+      "peak_w": 833.8659841287127,
+      "latency_ms": 1.4113,
+      "parameters": 11481,
+      "steps": 200
+    },
+    {
+      "label": "Improved lightweight student",
+      "controller": "student_improved",
+      "seed": 140000,
+      "phase": 1,
+      "success": true,
+      "running": false,
+      "distance": 0.14849193340845482,
+      "elapsed_s": 0.7041666666666654,
+      "energy_j": 195.34026667687357,
+      "mechanical_j": 203.0390629256305,
+      "peak_w": 874.1803582260601,
+      "latency_ms": 0.838,
+      "parameters": 11481,
+      "steps": 169
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "attempted_at_utc": "2026-11-26T14:40:37.552019+00:00",
+  "policy": "official public endpoints only; no login or access-control bypass",
+  "sdu": {
+    "source": "https://portal.findresearcher.sdu.dk/en/datasets/dataset-of-collaborative-robots-for-energy-consumption-modeling/",
+    "doi_attempted": "https://doi.org/10.21227/9wnt-8v86",
+    "downloaded": false,
+    "files": [],
+    "http_status": 200,
+    "final_url": "https://ieee-dataport.org/documents/dataset-collaborative-robots-energy-consumption-modeling",
+    "content_type": "text/html; charset=utf-8",
+    "access_note": "DOI resolved to a web page or non-file response; inspect the official page and confirm terms manually. No data file saved.",
+    "login_required_for_dataset_files": true,
+    "dataset_archive_size_listed": "101.47 MB",
+    "readme_http_status": 403
+  },
+  "mendeley": {
+    "source": "https://data.mendeley.com/datasets/hdhchngky8/1",
+    "api_attempted": "https://data.mendeley.com/public-api/datasets/hdhchngky8/files?folder_id=root&version=1&$start=0&$limit=1000",
+    "downloaded": true,
+    "files": [
+      {
+        "name": "readme.txt",
+        "bytes": 5547,
+        "sha256": "54e9dd536c046ae83a6320c834420adb9b7d29b72f949583c0a7c434557eb373",
+        "source_url": "https://data.mendeley.com/public-files/datasets/hdhchngky8/files/076da687-7c62-41de-ab4e-7d5e211aaf0e/file_downloaded"
+      }
+    ],
+    "http_status": 200,
+    "file_listing": [
+      {
+        "name": "graphs.m",
+        "bytes": 18455,
+        "sha256": "7d80950fa57ed44d4c6ee854a30a8165872c5da4bef05866999665d0a307bd22",
+        "file_id": "89c1f111-9808-433d-9166-82f4d3f1b262"
+      },
+      {
+        "name": "maps.m",
+        "bytes": 6178,
+        "sha256": "3ca81b5387bb8ffbb4197767676b767451c4acb706502e471ba4317f5a65d39c",
+        "file_id": "b9ff0e13-ba50-41db-afdd-3ae426cfcd62"
+      },
+      {
+        "name": "readme.txt",
+        "bytes": 5547,
+        "sha256": "54e9dd536c046ae83a6320c834420adb9b7d29b72f949583c0a7c434557eb373",
+        "file_id": "076da687-7c62-41de-ab4e-7d5e211aaf0e"
+      }
+    ],
+    "bulk_archive_http_status": 206,
+    "bulk_archive_size_bytes": 2709034696,
+    "access_note": "Downloaded and hashed the small official README; the multi-gigabyte split data archive was not downloaded."
+  }
+}

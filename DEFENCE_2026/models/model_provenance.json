@@ -1,0 +1,112 @@
+{
+  "teacher_final.pt": {
+    "source": "results\\internal_defence_v1_1_2026-11-26\\outer_deadline\\stages\\teacher_best.pt",
+    "source_sha256": "aa9e014ecf4f8215372de36a10edb44f0382111bb31317ab8d1ea1495172462c",
+    "export": "DEFENCE_2026\\models\\teacher_final.pt",
+    "export_sha256": "166860b938fc82b00a35d0c796bc1855c88eacb4a57af2672b8d5795236bfbbc",
+    "architecture": "23-256-256-89",
+    "parameters": 94809,
+    "state_dict_only": true
+  },
+  "teacher_original.pt": {
+    "source": "results\\internal_defence_v1_1_2026-11-26\\outer_deadline\\stages\\teacher_original.pt",
+    "source_sha256": "f766c6cab0eb0ea4ed50e99bb2a4d6ebe74aa956f1cef13d61bb1e29d633198f",
+    "export": "DEFENCE_2026\\models\\teacher_original.pt",
+    "export_sha256": "c53773bcce7d587323b991721ab4f649c567d041038c4c6313dc7a164a1fbb44",
+    "architecture": "23-256-256-89",
+    "parameters": 94809,
+    "state_dict_only": true
+  },
+  "teacher_finetuned_failed.pt": {
+    "source": "results\\internal_defence_v1_1_2026-11-26\\outer_deadline\\stages\\teacher_finetuned.pt",
+    "source_sha256": "6d76b92946ed5cccaf428b3204ed75ed8289605999a2f42ade7866cf12dde6b0",
+    "export": "DEFENCE_2026\\models\\teacher_finetuned_failed.pt",
+    "export_sha256": "21adc0845b2cf1e54f3c07ee5aced5b0722cf44f357accfa633407c34a911c38",
+    "architecture": "23-256-256-89",
+    "parameters": 94809,
+    "state_dict_only": true
+  },
+  "student_final.pt": {
+    "source": "results\\internal_defence_v1_1_2026-11-26\\outer_deadline\\stages\\student_best_final.pt",
+    "source_sha256": "974abb869392795e90c09eb948cbfb31efa70a95ffee9ce4885d8e32d881072b",
+    "export": "DEFENCE_2026\\models\\student_final.pt",
+    "export_sha256": "65620668902aeaa6e1c15fbf82bd894e8e8da4fd575cb7a082b6503ca078df22",
+    "architecture": "23-64-64-89",
+    "parameters": 11481,
+    "state_dict_only": true
+  },
+  "student_original.pt": {
+    "source": "results\\colab_run_2026-11-24\\models\\student.pt",
+    "source_sha256": "477196707eb7850c20f9c067e02abc4ff8bbbeaa54090776588281b5050bb399",
+    "export": "DEFENCE_2026\\models\\student_original.pt",
+    "export_sha256": "74f191ae1f4aec9fef3b8e334c3d87a114a213228c5d2df2253b83e999c2ee6a",
+    "architecture": "23-64-64-89",
+    "parameters": 11481,
+    "state_dict_only": true
+  },
+  "student_final_source_note": "student_best_final.pt is the selected 45/50 model, distilled from the retained original teacher; the separate student_best_from_original_teacher.pt is retained in recovered results for provenance.",
+  "selection_tensor_checks": {
+    "teacher_best_matches_teacher_original": true,
+    "student_final_matches_student_best_from_original_teacher": true,
+    "meaning": "State tensors verified exactly; selected student was distilled from retained original teacher."
+  },
+  "onnx": {
+    "attempted": true,
+    "status": "exported_and_validated",
+    "reason": null,
+    "models": {
+      "teacher_final.onnx": {
+        "source_checkpoint": "teacher_final.pt",
+        "source_sha256": "166860b938fc82b00a35d0c796bc1855c88eacb4a57af2672b8d5795236bfbbc",
+        "sha256": "73a392fac1e04d0376476e87f79c3ab7667a3acf91fccbd6856dea8c1f945e7b",
+        "bytes": 380091,
+        "batch_shapes_tested": [
+          [
+            1,
+            89
+          ],
+          [
+            2,
+            89
+          ],
+          [
+            8,
+            89
+          ]
+        ],
+        "max_abs_error": 7.62939453125e-06,
+        "greedy_action_agreement": 1.0,
+        "onnx_checker": "passed",
+        "parity_input_source": "recovered teacher demonstration observations from PyBullet simulation",
+        "parity_tolerance_abs": 5e-05,
+        "parity_status": "passed"
+      },
+      "student_final.onnx": {
+        "source_checkpoint": "student_final.pt",
+        "source_sha256": "65620668902aeaa6e1c15fbf82bd894e8e8da4fd575cb7a082b6503ca078df22",
+        "sha256": "eac5d9aa915135d3e1654dba444b80e7ede73371b859edd1ecb0bab162d9597d",
+        "bytes": 46771,
+        "batch_shapes_tested": [
+          [
+            1,
+            89
+          ],
+          [
+            2,
+            89
+          ],
+          [
+            8,
+            89
+          ]
+        ],
+        "max_abs_error": 7.62939453125e-06,
+        "greedy_action_agreement": 1.0,
+        "onnx_checker": "passed",
+        "parity_input_source": "recovered teacher demonstration observations from PyBullet simulation",
+        "parity_tolerance_abs": 5e-05,
+        "parity_status": "passed"
+      }
+    }
+  }
+}

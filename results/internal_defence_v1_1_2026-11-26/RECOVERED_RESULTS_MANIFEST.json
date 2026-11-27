@@ -1,0 +1,380 @@
+{
+  "created_date": "2026-11-26",
+  "source_archive": "RECOVERED_RESEARCH_RESULTS.zip",
+  "source_archive_bytes": 20455319,
+  "source_archive_sha256": "1aa45792f1a0704f312c81153a9e60ff051d5bea87873df717646125c54953c8",
+  "archive_crc_check": "passed",
+  "outer_deadline_extracted_files": 46,
+  "nested_partial_extracted_files": 15,
+  "outer_deadline": [
+    {
+      "path": "outer_deadline/experiment_config.json",
+      "bytes": 8450,
+      "sha256": "84e8358622880515003b100ac85639c0e285e40d12a81c7b28ff120581163922",
+      "source_member": "deadline/experiment_config.json"
+    },
+    {
+      "path": "outer_deadline/seed_manifest.csv",
+      "bytes": 25523,
+      "sha256": "eaed51949c0cd32b0bc0cddb8da1ed5c56d8c52b519f5aeaeddb0a497f4ff170",
+      "source_member": "deadline/seed_manifest.csv"
+    },
+    {
+      "path": "outer_deadline/baseline_validation_selection.json",
+      "bytes": 511,
+      "sha256": "f6c7deae0d243f805cfa3119248c695a917d84794a63d24e13228418d23e8da4",
+      "source_member": "deadline/baseline_validation_selection.json"
+    },
+    {
+      "path": "outer_deadline/dataset_download_attempt.json",
+      "bytes": 2302,
+      "sha256": "b62998dc268e645ae580de2e53143cbe88ed6ee81d38413a0aaafb6ca4834134",
+      "source_member": "deadline/dataset_download_attempt.json"
+    },
+    {
+      "path": "outer_deadline/robot_dataset_file_inventory.json",
+      "bytes": 187,
+      "sha256": "94a654ec4d7a88b96f750b33ad85ce952d73176cca1d9358e6bee16d56d3a7d0",
+      "source_member": "deadline/robot_dataset_file_inventory.json"
+    },
+    {
+      "path": "outer_deadline/final_episode_metrics.csv",
+      "bytes": 121939,
+      "sha256": "27d2c4f9a7b0c366e47e55f667a00f33e017905663330daab654a7648302ddf2",
+      "source_member": "deadline/final_episode_metrics.csv"
+    },
+    {
+      "path": "outer_deadline/final_policy_summary.csv",
+      "bytes": 2616,
+      "sha256": "b7f0b752a13d11e3b4c25e12b507403ff2e3f10d1ec1f3b597bf6c4d5f15cdec",
+      "source_member": "deadline/final_policy_summary.csv"
+    },
+    {
+      "path": "outer_deadline/paired_energy_saving.csv",
+      "bytes": 528,
+      "sha256": "4e18682728c77e1ca2adf9b9c3fa6778a2a6c61e74513a02affa9e5c392f8337",
+      "source_member": "deadline/paired_energy_saving.csv"
+    },
+    {
+      "path": "outer_deadline/inference_benchmark.csv",
+      "bytes": 444,
+      "sha256": "6e713494ba16c1b79c93eb91ecdc4c5cb6d7a777da88f056459928274226b2de",
+      "source_member": "deadline/inference_benchmark.csv"
+    },
+    {
+      "path": "outer_deadline/model_comparison.csv",
+      "bytes": 501,
+      "sha256": "d72a942b765afa404b7d2a5dfbbdcfaf3cf2deff3df7011489e5371a7a66d4eb",
+      "source_member": "deadline/model_comparison.csv"
+    },
+    {
+      "path": "outer_deadline/stages/teacher_original.pt",
+      "bytes": 382465,
+      "sha256": "f766c6cab0eb0ea4ed50e99bb2a4d6ebe74aa956f1cef13d61bb1e29d633198f",
+      "source_member": "deadline/stages/teacher_original.pt"
+    },
+    {
+      "path": "outer_deadline/stages/teacher_demonstrations.npz",
+      "bytes": 6796315,
+      "sha256": "ec7d5614af55cfe176820022e50b8f4704fff635bf8c816370017f732ccab17a",
+      "source_member": "deadline/stages/teacher_demonstrations.npz"
+    },
+    {
+      "path": "outer_deadline/stages/demonstration_selection.json",
+      "bytes": 156,
+      "sha256": "49facaad81a0157d546e4c05b65c4ad2e36bc710d54fbeb901557f186dea14ac",
+      "source_member": "deadline/stages/demonstration_selection.json"
+    },
+    {
+      "path": "outer_deadline/stages/student_best.pt",
+      "bytes": 49525,
+      "sha256": "f50e5ac553ed7ba420cb2f031928133d7ecacd248db8bf6f951918a2f9160405",
+      "source_member": "deadline/stages/student_best.pt"
+    },
+    {
+      "path": "outer_deadline/stages/student_resume_checkpoint.pt",
+      "bytes": 166069,
+      "sha256": "98043ec97a262fb047f971cbd71d02d226fa9a461d2b53d29ba802443f1be325",
+      "source_member": "deadline/stages/student_resume_checkpoint.pt"
+    },
+    {
+      "path": "outer_deadline/stages/student_last.pt",
+      "bytes": 49525,
+      "sha256": "8a9cdda21fe7a03d7af110b8b97a3a90732a5e0af0fbc7b9360cd28fabe87fb5",
+      "source_member": "deadline/stages/student_last.pt"
+    },
+    {
+      "path": "outer_deadline/stages/student_training_history.csv",
+      "bytes": 6534,
+      "sha256": "f5533f0c7e98ff67efa6b804aa53a02663180f96eef4f21bf85a9bafb429f053",
+      "source_member": "deadline/stages/student_training_history.csv"
+    },
+    {
+      "path": "outer_deadline/stages/student_best_final.pt",
+      "bytes": 49241,
+      "sha256": "974abb869392795e90c09eb948cbfb31efa70a95ffee9ce4885d8e32d881072b",
+      "source_member": "deadline/stages/student_best_final.pt"
+    },
+    {
+      "path": "outer_deadline/stages/corrective_data_selection.json",
+      "bytes": 168,
+      "sha256": "8227fa661dc98ae108020f858b0e74946ae6c1a77374f8407630b8c656d38a76",
+      "source_member": "deadline/stages/corrective_data_selection.json"
+    },
+    {
+      "path": "outer_deadline/stages/teacher_finetuned.pt",
+      "bytes": 382477,
+      "sha256": "6d76b92946ed5cccaf428b3204ed75ed8289605999a2f42ade7866cf12dde6b0",
+      "source_member": "deadline/stages/teacher_finetuned.pt"
+    },
+    {
+      "path": "outer_deadline/stages/teacher_training_history.csv",
+      "bytes": 4400,
+      "sha256": "a6a90db1e91f02c23adcce2a90fda0ced06f54ec3d0af9b7cff840822c574e13",
+      "source_member": "deadline/stages/teacher_training_history.csv"
+    },
+    {
+      "path": "outer_deadline/stages/teacher_resume_checkpoint.pt",
+      "bytes": 3027549,
+      "sha256": "81b407e3d3218469ab37ad157e859c6ed42ea855e75b57b2a2ce9dd150535eb3",
+      "source_member": "deadline/stages/teacher_resume_checkpoint.pt"
+    },
+    {
+      "path": "outer_deadline/stages/teacher_validation_results.csv",
+      "bytes": 11794,
+      "sha256": "db020475a8154dd3953f3c860f239f8a2d030f7df248a844ad352c66fd48e278",
+      "source_member": "deadline/stages/teacher_validation_results.csv"
+    },
+    {
+      "path": "outer_deadline/stages/teacher_best.pt",
+      "bytes": 382417,
+      "sha256": "aa9e014ecf4f8215372de36a10edb44f0382111bb31317ab8d1ea1495172462c",
+      "source_member": "deadline/stages/teacher_best.pt"
+    },
+    {
+      "path": "outer_deadline/stages/teacher_selection.json",
+      "bytes": 457,
+      "sha256": "17df186ef3aa689d21e0e7e863d55ae37359ac11f0adcca116543ca019bb8d97",
+      "source_member": "deadline/stages/teacher_selection.json"
+    },
+    {
+      "path": "outer_deadline/stages/student_best_from_original_teacher.pt",
+      "bytes": 49433,
+      "sha256": "fd74d0e15683c42778fcd08986d347f274e4d1f4cb7082f6e5f669addc3de1d7",
+      "source_member": "deadline/stages/student_best_from_original_teacher.pt"
+    },
+    {
+      "path": "outer_deadline/stages/validation_baseline_fixed_original.csv",
+      "bytes": 5765,
+      "sha256": "785c9bb671404795128ff20a478cf8561a96ab0ea5dab0a0a95dfb8953619d74",
+      "source_member": "deadline/stages/validation_baseline_fixed_original.csv"
+    },
+    {
+      "path": "outer_deadline/stages/validation_baseline_fixed_slow.csv",
+      "bytes": 5517,
+      "sha256": "13c1375f30835cbce42ba3c19053b210544533c4ad3399782db15176016923f2",
+      "source_member": "deadline/stages/validation_baseline_fixed_slow.csv"
+    },
+    {
+      "path": "outer_deadline/stages/validation_baseline_proportional.csv",
+      "bytes": 5585,
+      "sha256": "a9506e4385394fdc2e113d6c93bb419fab9878b02d6999f025f4dba2a495e46a",
+      "source_member": "deadline/stages/validation_baseline_proportional.csv"
+    },
+    {
+      "path": "outer_deadline/stages/validation_baseline_adaptive.csv",
+      "bytes": 5489,
+      "sha256": "1686d139a0b1dbf52b7a9b761c543adb6922474ed747475f263b82631f23f689",
+      "source_member": "deadline/stages/validation_baseline_adaptive.csv"
+    },
+    {
+      "path": "outer_deadline/stages/evaluation_IK_fixed_original.csv",
+      "bytes": 13482,
+      "sha256": "a92641e2d3fb683540f17cdcc7918fafdfe0b73cc2acb4ef964006a0150dd92c",
+      "source_member": "deadline/stages/evaluation_IK_fixed_original.csv"
+    },
+    {
+      "path": "outer_deadline/stages/evaluation_IK_fixed_slow.csv",
+      "bytes": 13345,
+      "sha256": "d4819fc48a2e2e7869d4485ec61158f552925ebf6d8afd06ac3897cd021d4011",
+      "source_member": "deadline/stages/evaluation_IK_fixed_slow.csv"
+    },
+    {
+      "path": "outer_deadline/stages/evaluation_IK_proportional.csv",
+      "bytes": 13457,
+      "sha256": "58c765917ee8b36aee70dda3a17ecabdf0afcd06db593af1e42731169e860f97",
+      "source_member": "deadline/stages/evaluation_IK_proportional.csv"
+    },
+    {
+      "path": "outer_deadline/stages/evaluation_IK_adaptive.csv",
+      "bytes": 13285,
+      "sha256": "444a0dc9601d9a6e2a35f007fba14373fbcdc434d40327a5eb5bdd25202d9140",
+      "source_member": "deadline/stages/evaluation_IK_adaptive.csv"
+    },
+    {
+      "path": "outer_deadline/stages/evaluation_teacher_original.csv",
+      "bytes": 14287,
+      "sha256": "8a1b8a711696725aeba8744a6dc1d432166e067ae1ef3a40477b50bda448d62a",
+      "source_member": "deadline/stages/evaluation_teacher_original.csv"
+    },
+    {
+      "path": "outer_deadline/stages/evaluation_teacher_best.csv",
+      "bytes": 14087,
+      "sha256": "9bfd4bf6a4d7539c24f28b40eb98c57df419f520f0e42c5d1ae9ffd60853af0a",
+      "source_member": "deadline/stages/evaluation_teacher_best.csv"
+    },
+    {
+      "path": "outer_deadline/stages/evaluation_student_original.csv",
+      "bytes": 14359,
+      "sha256": "54cd29fdbaad6677241cdb34d6611e043a70cf1b58e9db01d469a07ee324acc4",
+      "source_member": "deadline/stages/evaluation_student_original.csv"
+    },
+    {
+      "path": "outer_deadline/stages/evaluation_student_best.csv",
+      "bytes": 13946,
+      "sha256": "7e2db837685e1dc9754f20e0e27c92a1f838199c1e9925e51adcf1fd5597a1cd",
+      "source_member": "deadline/stages/evaluation_student_best.csv"
+    },
+    {
+      "path": "outer_deadline/stages/evaluation_teacher_finetuned.csv",
+      "bytes": 14011,
+      "sha256": "d6ed1a8d2063abbfd8d3d095f879275734565aa4cf12af87d92ca4af34b8722c",
+      "source_member": "deadline/stages/evaluation_teacher_finetuned.csv"
+    },
+    {
+      "path": "outer_deadline/dataset_analysis/steel_hourly_power_summary.csv",
+      "bytes": 847,
+      "sha256": "4baa07a0211b89066cc51fd11caf8d4e950ed8b5b54f75b6aa2f0cd398a97802",
+      "source_member": "deadline/dataset_analysis/steel_hourly_power_summary.csv"
+    },
+    {
+      "path": "outer_deadline/dataset_analysis/steel_top_1pct_intervals.csv",
+      "bytes": 16138,
+      "sha256": "de98c1bf6735b6e8d4be7f0a08ba7efd4ba03219eea15c998f052c459b246fa6",
+      "source_member": "deadline/dataset_analysis/steel_top_1pct_intervals.csv"
+    },
+    {
+      "path": "outer_deadline/dataset_analysis/steel_demand_analysis.png",
+      "bytes": 210789,
+      "sha256": "b612bf64a442c7b731a8e48f15f9ac508163b1cb2272daaf21810d782d6a0f37",
+      "source_member": "deadline/dataset_analysis/steel_demand_analysis.png"
+    },
+    {
+      "path": "outer_deadline/dataset_analysis/steel_analysis_summary.json",
+      "bytes": 1263,
+      "sha256": "e33b1095bd9c411177770d318e471ec36e575394e6dc2ec9c2896c211724c2bc",
+      "source_member": "deadline/dataset_analysis/steel_analysis_summary.json"
+    },
+    {
+      "path": "outer_deadline/dataset_documentation/readme.txt",
+      "bytes": 5547,
+      "sha256": "54e9dd536c046ae83a6320c834420adb9b7d29b72f949583c0a7c434557eb373",
+      "source_member": "deadline/dataset_documentation/readme.txt"
+    },
+    {
+      "path": "outer_deadline/models/teacher.onnx.data",
+      "bytes": 379236,
+      "sha256": "31812d41619a4d65e5af3f4b3d6586ae6463355a3d7cc85dc290f90aca73ac62",
+      "source_member": "deadline/models/teacher.onnx.data"
+    },
+    {
+      "path": "outer_deadline/models/teacher.onnx",
+      "bytes": 1466,
+      "sha256": "3d4f72f9cd82313ad4db7d99a9f23cd962364226e90f29790476728b0ce698c4",
+      "source_member": "deadline/models/teacher.onnx"
+    }
+  ],
+  "nested_partial_deadline": [
+    {
+      "path": "nested_partial_deadline/config.json",
+      "bytes": 1058,
+      "sha256": "800ed5af0319e6d10242ccb8dab28704cd970c40c0cb0812c569fcc0dab98d75",
+      "source_member": "deadline/deadline/config.json"
+    },
+    {
+      "path": "nested_partial_deadline/experiment_config.json",
+      "bytes": 8450,
+      "sha256": "84e8358622880515003b100ac85639c0e285e40d12a81c7b28ff120581163922",
+      "source_member": "deadline/deadline/experiment_config.json"
+    },
+    {
+      "path": "nested_partial_deadline/seed_manifest.csv",
+      "bytes": 25523,
+      "sha256": "eaed51949c0cd32b0bc0cddb8da1ed5c56d8c52b519f5aeaeddb0a497f4ff170",
+      "source_member": "deadline/deadline/seed_manifest.csv"
+    },
+    {
+      "path": "nested_partial_deadline/stages/teacher_original.pt",
+      "bytes": 382465,
+      "sha256": "f766c6cab0eb0ea4ed50e99bb2a4d6ebe74aa956f1cef13d61bb1e29d633198f",
+      "source_member": "deadline/deadline/stages/teacher_original.pt"
+    },
+    {
+      "path": "nested_partial_deadline/stages/teacher_demonstrations.npz",
+      "bytes": 6796315,
+      "sha256": "ec7d5614af55cfe176820022e50b8f4704fff635bf8c816370017f732ccab17a",
+      "source_member": "deadline/deadline/stages/teacher_demonstrations.npz"
+    },
+    {
+      "path": "nested_partial_deadline/stages/demonstration_selection.json",
+      "bytes": 156,
+      "sha256": "49facaad81a0157d546e4c05b65c4ad2e36bc710d54fbeb901557f186dea14ac",
+      "source_member": "deadline/deadline/stages/demonstration_selection.json"
+    },
+    {
+      "path": "nested_partial_deadline/stages/student_best.pt",
+      "bytes": 49525,
+      "sha256": "f50e5ac553ed7ba420cb2f031928133d7ecacd248db8bf6f951918a2f9160405",
+      "source_member": "deadline/deadline/stages/student_best.pt"
+    },
+    {
+      "path": "nested_partial_deadline/stages/student_resume_checkpoint.pt",
+      "bytes": 166069,
+      "sha256": "98043ec97a262fb047f971cbd71d02d226fa9a461d2b53d29ba802443f1be325",
+      "source_member": "deadline/deadline/stages/student_resume_checkpoint.pt"
+    },
+    {
+      "path": "nested_partial_deadline/stages/student_last.pt",
+      "bytes": 49525,
+      "sha256": "8a9cdda21fe7a03d7af110b8b97a3a90732a5e0af0fbc7b9360cd28fabe87fb5",
+      "source_member": "deadline/deadline/stages/student_last.pt"
+    },
+    {
+      "path": "nested_partial_deadline/stages/student_training_history.csv",
+      "bytes": 6534,
+      "sha256": "f5533f0c7e98ff67efa6b804aa53a02663180f96eef4f21bf85a9bafb429f053",
+      "source_member": "deadline/deadline/stages/student_training_history.csv"
+    },
+    {
+      "path": "nested_partial_deadline/stages/student_best_final.pt",
+      "bytes": 49241,
+      "sha256": "974abb869392795e90c09eb948cbfb31efa70a95ffee9ce4885d8e32d881072b",
+      "source_member": "deadline/deadline/stages/student_best_final.pt"
+    },
+    {
+      "path": "nested_partial_deadline/stages/corrective_data_selection.json",
+      "bytes": 168,
+      "sha256": "8227fa661dc98ae108020f858b0e74946ae6c1a77374f8407630b8c656d38a76",
+      "source_member": "deadline/deadline/stages/corrective_data_selection.json"
+    },
+    {
+      "path": "nested_partial_deadline/stages/teacher_resume_checkpoint.pt",
+      "bytes": 3027549,
+      "sha256": "53ccfdef20042c634e2f44500631ebdd67992679827a74a6318a02e828d32f61",
+      "source_member": "deadline/deadline/stages/teacher_resume_checkpoint.pt"
+    },
+    {
+      "path": "nested_partial_deadline/stages/teacher_training_history.csv",
+      "bytes": 4400,
+      "sha256": "a6a90db1e91f02c23adcce2a90fda0ced06f54ec3d0af9b7cff840822c574e13",
+      "source_member": "deadline/deadline/stages/teacher_training_history.csv"
+    },
+    {
+      "path": "nested_partial_deadline/stages/teacher_finetuned.pt",
+      "bytes": 382477,
+      "sha256": "6d76b92946ed5cccaf428b3204ed75ed8289605999a2f42ade7866cf12dde6b0",
+      "source_member": "deadline/deadline/stages/teacher_finetuned.pt"
+    }
+  ],
+  "note": "Outer final evaluation and nested partial-stage checkpoints are extracted into separate directories. Original source ZIP is unchanged."
+}

@@ -1,0 +1,58 @@
+{
+  "source_local_path": "C:\\Users\\JOEL\\Desktop\\DQN\\Energy_consumption_DQN\\notebooks\\steel_data.csv",
+  "rows": 35040,
+  "columns": [
+    "date",
+    "Usage_kWh",
+    "Lagging_Current_Reactive.Power_kVarh",
+    "Leading_Current_Reactive_Power_kVarh",
+    "CO2(tCO2)",
+    "Lagging_Current_Power_Factor",
+    "Leading_Current_Power_Factor",
+    "NSM",
+    "WeekStatus",
+    "Day_of_week",
+    "Load_Type"
+  ],
+  "missing_cells": 0,
+  "duplicate_rows": 0,
+  "start": "2018-01-01T00:00:00",
+  "end": "2018-12-31T23:45:00",
+  "modal_interval_seconds": 900.0,
+  "irregular_intervals": 0,
+  "usage_kwh_summary": {
+    "count": 35040.0,
+    "mean": 27.386892408675802,
+    "std": 33.44437970801512,
+    "min": 0.0,
+    "25%": 3.2,
+    "50%": 4.57,
+    "75%": 51.2375,
+    "max": 157.18
+  },
+  "load_counts": {
+    "Light_Load": 18072,
+    "Medium_Load": 9696,
+    "Maximum_Load": 7272
+  },
+  "load_usage_kwh": {
+    "Light_Load": {
+      "count": 18072.0,
+      "mean": 8.626206839309429,
+      "median": 3.31,
+      "max": 140.29
+    },
+    "Maximum_Load": {
+      "count": 7272.0,
+      "mean": 59.26531353135314,
+      "median": 56.63,
+      "max": 151.67
+    },
+    "Medium_Load": {
+      "count": 9696.0,
+      "mean": 38.44539397689769,
+      "median": 34.435,
+      "max": 157.18
+    }
+  }
+}

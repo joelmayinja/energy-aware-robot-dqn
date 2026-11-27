@@ -1,0 +1,3 @@
+epoch,train_loss,validation_loss,validation_action_agreement,closed_loop_validation_success
+1,18.14551544189453,17.793994903564453,0.0,0.0
+2,18.04912910461426,17.704538345336914,0.0,0.0

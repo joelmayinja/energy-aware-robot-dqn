@@ -1,0 +1,13 @@
+# Local PyBullet demo and analysis. The existing .conda-training environment is preferred.
+numpy>=1.24
+pandas>=2.0
+matplotlib>=3.7
+gymnasium>=0.29
+pybullet>=3.2
+torch>=2.0
+imageio>=2.34
+imageio-ffmpeg>=0.5
+pillow>=10.0
+# Optional, required only to create/check ONNX exports:
+onnx>=1.15
+onnxruntime>=1.16

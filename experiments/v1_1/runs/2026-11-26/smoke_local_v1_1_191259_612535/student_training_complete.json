@@ -1,0 +1,21 @@
+{
+  "completed_epochs": 2,
+  "best_epoch": 2,
+  "best_validation_loss": 17.704538345336914,
+  "data_signature": "ac7435658b5eadf43a5ebfe458f7e9cf167c1fa8809e4db993cd1000198edb9f",
+  "config": {
+    "mode": "smoke",
+    "seed": 20261126,
+    "trajectories": 3,
+    "max_steps": 20,
+    "epochs": 2,
+    "batch_size": 32,
+    "learning_rate": 0.0005,
+    "temperature": 2.0,
+    "q_regression_weight": 0.05,
+    "validation_fraction": 0.2,
+    "patience": 2,
+    "evaluation_episodes": 2,
+    "device": "cpu"
+  }
+}

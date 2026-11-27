@@ -1,0 +1,23 @@
+{
+  "seed_start": 163000,
+  "episodes_per_controller": 20,
+  "scores": {
+    "adaptive": {
+      "completion_rate": 0.0,
+      "mean_energy_success_j": Infinity
+    },
+    "fixed_original": {
+      "completion_rate": 0.9,
+      "mean_energy_success_j": 121.54749162329728
+    },
+    "fixed_slow": {
+      "completion_rate": 0.0,
+      "mean_energy_success_j": Infinity
+    },
+    "proportional": {
+      "completion_rate": 0.0,
+      "mean_energy_success_j": Infinity
+    }
+  },
+  "selected": "fixed_original"
+}

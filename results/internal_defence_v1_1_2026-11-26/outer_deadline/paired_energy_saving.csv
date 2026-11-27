@@ -1,0 +1,10 @@
+policy,paired_successes_with_fixed_IK,mean_paired_saving_pct,median_paired_saving_pct,sd_paired_saving_pct,bootstrap_95_low_pct,bootstrap_95_high_pct,exact_mcnemar_p,both_success,baseline_only_success,policy_only_success,both_fail
+adaptive,0,,,,,,1.0,0,0,0,0
+fixed_original,0,,,,,,1.0,0,0,0,0
+fixed_slow,0,,,,,,1.0,0,0,0,0
+proportional,0,,,,,,1.0,0,0,0,0
+student_best,0,,,,,,1.0,0,0,0,0
+student_original,0,,,,,,1.0,0,0,0,0
+teacher_best,0,,,,,,1.0,0,0,0,0
+teacher_finetuned,0,,,,,,1.0,0,0,0,0
+teacher_original,0,,,,,,1.0,0,0,0,0

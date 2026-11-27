@@ -1,0 +1,3 @@
+agent,evaluation_episodes,completed_episodes,completion_rate_percent,avg_energy_all_episodes_ws,avg_energy_completed_ws,avg_peak_completed_ws,avg_final_distance_m
+IK-assisted DQN,50,47,94.0,274.262,272.4667,3.9844,0.151
+IK baseline,50,46,92.0,257.5349,251.9843,4.0212,0.1506

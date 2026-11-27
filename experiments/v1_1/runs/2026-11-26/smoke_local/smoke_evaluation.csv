@@ -1,0 +1,3 @@
+policy,seed,success,steps,episode_reward,grid_energy_j,peak_grid_power_w,energy_per_success_j,failure_energy_j
+student_smoke,900,0,20,-0.8723767781069239,18.63113453554089,972.917166415071,nan,18.63113453554089
+student_smoke,901,0,20,-0.9397930715318092,18.716714893288525,1107.3452173188846,nan,18.716714893288525

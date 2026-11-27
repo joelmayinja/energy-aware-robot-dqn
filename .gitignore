@@ -16,8 +16,15 @@ env/
 # Data (datasets can be large — don't commit raw data to git)
 data/raw/*
 !data/raw/.gitkeep
+!data/raw/steel/
+!data/raw/collaborative_robot/
+!data/raw/high_payload_robot/
+data/raw/*/*
+!data/raw/*/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
+data/simulated/*
+!data/simulated/.gitkeep
 
 # Trained model weights (can be large too)
 models/*.pt

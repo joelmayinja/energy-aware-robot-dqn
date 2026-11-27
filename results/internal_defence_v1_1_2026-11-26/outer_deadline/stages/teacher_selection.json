@@ -1,0 +1,16 @@
+{
+  "validation_seed_start": 161000,
+  "validation_episodes_per_candidate": 20,
+  "candidates": {
+    "teacher_original": {
+      "completion_rate": 0.95,
+      "mean_energy_success_j": 246.03374521300353
+    },
+    "teacher_finetuned": {
+      "completion_rate": 0.0,
+      "mean_energy_success_j": Infinity
+    }
+  },
+  "selected": "teacher_original",
+  "selection_rule": "higher validation completion, then lower mean energy among validation successes"
+}

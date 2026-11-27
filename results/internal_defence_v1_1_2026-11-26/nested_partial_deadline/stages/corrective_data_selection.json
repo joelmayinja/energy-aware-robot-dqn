@@ -1,0 +1,6 @@
+{
+  "teacher_validation_success_rate": 1.0,
+  "student_validation_success_rate": 1.0,
+  "selected": "teacher_trajectory_distillation",
+  "corrective_triggered": false
+}

@@ -1,0 +1,23 @@
+{
+  "outer_deadline_rows": 450,
+  "policy_count": 9,
+  "heldout_seed_count": 50,
+  "heldout_seed_min": 140000,
+  "heldout_seed_max": 140049,
+  "duplicate_policy_seed_rows": 0,
+  "fixed_original_completions": 44,
+  "teacher_original_completions": 46,
+  "teacher_best_completions": 46,
+  "teacher_finetuned_completions": 0,
+  "student_original_completions": 7,
+  "student_best_completions": 45,
+  "student_teacher_completion_retention_pct": 97.82608695652173,
+  "teacher_best_mean_paired_saving_pct": -180.58380793867914,
+  "student_best_mean_paired_saving_pct": -157.77293679444017,
+  "fine_tuned_teacher_mean_energy_saving_pct": null,
+  "note": "Fine-tuned teacher has no shared successful episodes, so success-conditional energy saving is unavailable; its failed-attempt energy remains in summary.",
+  "paired_energy_denominator": "shared successful scenario seeds only; (fixed IK grid J - policy grid J) / fixed IK grid J * 100",
+  "completion_interval": "Wilson score 95% interval",
+  "energy_interval": "percentile bootstrap 95% CI, 20000 resamples, seed 20261126",
+  "source": "Recovered outer deadline final_episode_metrics.csv; separate nested checkpoint files are not mixed into these results."
+}
