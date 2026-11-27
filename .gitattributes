@@ -1,0 +1,8 @@
+# Preserve raw evidence line endings so archived SHA-256 checks pass on all platforms.
+/results/internal_defence_v1_1_2026-11-26/** -text
+/DEFENCE_2026/*.csv -text
+/DEFENCE_2026/*.json -text
+/DEFENCE_2026/videos/*.json -text
+/DEFENCE_2026/models/*.json -text
+/evaluation_summary.csv -text
+/paired_evaluation.csv -text
